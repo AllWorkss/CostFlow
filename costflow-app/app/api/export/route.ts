@@ -15,15 +15,16 @@ export async function POST(request: NextRequest) {
     }
 
     const buffer = await generateExcelExport(config);
+    const uint8Array = new Uint8Array(buffer);
 
     const fileName = `CostFlow_${config.projectName.replace(/\s+/g, "_")}_${new Date().toISOString().slice(0, 10)}.xlsx`;
 
-    return new NextResponse(buffer, {
+    return new NextResponse(uint8Array, {
       status: 200,
       headers: {
         "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         "Content-Disposition": `attachment; filename="${fileName}"`,
-        "Content-Length": buffer.length.toString(),
+        "Content-Length": uint8Array.length.toString(),
       },
     });
   } catch (error) {

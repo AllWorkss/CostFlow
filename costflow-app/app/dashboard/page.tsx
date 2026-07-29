@@ -5,26 +5,27 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   TrendingUp, Settings, Download, RefreshCw, Plus, AlertTriangle,
   ChevronDown, ChevronUp, Trash2, Eye, EyeOff, Sparkles, Activity,
-  BarChart2, ArrowLeft, Sun, Moon, Save, Factory, GraduationCap,
+  BarChart2, ArrowLeft, Sun, Moon, Factory, GraduationCap,
   ShoppingCart, Globe, HardHat, Package, Users, Receipt, Target,
+  type LucideProps,
 } from "lucide-react";
 import Link from "next/link";
 import {
-  LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
+  BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from "recharts";
 import { useCostingStore } from "@/lib/store/costingStore";
 import { DOMAIN_PRESETS } from "@/lib/engine/domainPresets";
-import { detectAnomalies } from "@/lib/ml/anomalyDetector";
-import { computePriceRecommendation } from "@/lib/ml/anomalyDetector";
+import { detectAnomalies, computePriceRecommendation } from "@/lib/ml/anomalyDetector";
 import type { Domain } from "@/types/costing";
 
-const DOMAIN_ICONS: Record<string, React.ComponentType<{ size?: number; style?: React.CSSProperties }>> = {
+const DOMAIN_ICONS: Record<string, React.ComponentType<LucideProps>> = {
   manufacturing: Factory, school: GraduationCap, retail: ShoppingCart,
   ecommerce: Globe, construction: HardHat,
 };
 
-const BLOCK_ICONS: Record<string, React.ComponentType<{ size?: number; style?: React.CSSProperties }>> = {
+// unused icon map — kept for reference
+const _BLOCK_ICONS: Record<string, React.ComponentType<LucideProps>> = {
   Package, Users, Settings, Receipt, TrendingUp, Target,
   Trash2, Sparkles, AlertTriangle, Activity,
 };
@@ -171,7 +172,7 @@ export default function DashboardPage() {
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-2xl flex items-center justify-center"
               style={{ background: `${currentPreset?.color ?? "#3B82F6"}20` }}>
-              <DomainIcon size={26} style={{ color: currentPreset?.color ?? "#3B82F6" }} />
+              <DomainIcon size={26} color={currentPreset?.color ?? "#3B82F6"} />
             </div>
             <div>
               <input value={store.projectName} onChange={e => store.setProjectName(e.target.value)}
@@ -197,7 +198,7 @@ export default function DashboardPage() {
           <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
             className="mb-5 p-4 rounded-xl border flex items-start gap-3"
             style={{ background: "rgba(239,68,68,0.08)", borderColor: "rgba(239,68,68,0.3)" }}>
-            <AlertTriangle size={20} style={{ color: "#EF4444", flexShrink: 0, marginTop: 2 }} />
+            <AlertTriangle size={20} color="#EF4444" style={{ flexShrink: 0, marginTop: 2 }} />
             <div>
               <div className="font-bold text-sm mb-1" style={{ color: "#EF4444" }}>
                 ML Anomaly Detected — {anomalies.length} unusual value{anomalies.length > 1 ? "s" : ""}
@@ -288,13 +289,13 @@ export default function DashboardPage() {
                   </div>
                   <div className="flex items-center gap-1 ml-2">
                     <button onClick={e => { e.stopPropagation(); store.toggleBlock(block.id); }} className="p-1.5 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
-                      {block.enabled ? <Eye size={15} style={{ color: "#3B82F6" }} /> : <EyeOff size={15} style={{ color: textSec }} />}
+                      {block.enabled ? <Eye size={15} color="#3B82F6" /> : <EyeOff size={15} color={textSec} />}
                     </button>
                     <button onClick={e => { e.stopPropagation(); store.deleteBlock(block.id); showNotif(`Removed "${block.label}"`); }}
                       className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
-                      <Trash2 size={15} style={{ color: "#EF4444" }} />
+                      <Trash2 size={15} color="#EF4444" />
                     </button>
-                    {expandedBlock === block.id ? <ChevronUp size={16} style={{ color: textSec }} /> : <ChevronDown size={16} style={{ color: textSec }} />}
+                    {expandedBlock === block.id ? <ChevronUp size={16} color={textSec} /> : <ChevronDown size={16} color={textSec} />}
                   </div>
                 </div>
 
@@ -341,7 +342,7 @@ export default function DashboardPage() {
             {/* Cost Summary Card */}
             <div className="metric-card" style={{ background: cardBg, borderColor: border }}>
               <h3 className="font-bold mb-4 flex items-center gap-2" style={{ color: textPrimary }}>
-                <TrendingUp size={18} style={{ color: "#3B82F6" }} /> Cost Summary
+                <TrendingUp size={18} color="#3B82F6" /> Cost Summary
               </h3>
               {store.summary ? (
                 <div className="space-y-3">
@@ -391,7 +392,7 @@ export default function DashboardPage() {
             {store.summary && store.summary.costBreakdown.length > 0 && (
               <div className="metric-card" style={{ background: cardBg, borderColor: border }}>
                 <h3 className="font-bold mb-4 flex items-center gap-2" style={{ color: textPrimary }}>
-                  <BarChart2 size={18} style={{ color: "#06B6D4" }} /> Cost Breakdown
+                  <BarChart2 size={18} color="#06B6D4" /> Cost Breakdown
                 </h3>
                 <ResponsiveContainer width="100%" height={200}>
                   <PieChart>
@@ -401,7 +402,7 @@ export default function DashboardPage() {
                         <Cell key={entry.label} fill={entry.color} />
                       ))}
                     </Pie>
-                    <Tooltip formatter={(v: number) => formatCurrency(v, store.currency)} />
+                    <Tooltip formatter={(v) => formatCurrency(Number(v ?? 0), store.currency)} />
                     <Legend iconType="circle" />
                   </PieChart>
                 </ResponsiveContainer>
@@ -414,7 +415,7 @@ export default function DashboardPage() {
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }}
                   className="metric-card" style={{ background: cardBg, borderColor: "rgba(139,92,246,0.3)" }}>
                   <h3 className="font-bold mb-4 flex items-center gap-2" style={{ color: textPrimary }}>
-                    <Sparkles size={18} style={{ color: "#8B5CF6" }} /> AI Price Recommender
+                    <Sparkles size={18} color="#8B5CF6" /> AI Price Recommender
                   </h3>
                   <div className="mb-4">
                     <label className="text-xs font-medium mb-2 block" style={{ color: textSec }}>
@@ -456,7 +457,7 @@ export default function DashboardPage() {
                     <CartesianGrid strokeDasharray="3 3" stroke={isDark ? "#1E3A5F" : "#E2E8F0"} />
                     <XAxis dataKey="name" tick={{ fontSize: 10, fill: textSec }} />
                     <YAxis tick={{ fontSize: 10, fill: textSec }} />
-                    <Tooltip formatter={(v: number) => formatCurrency(v, store.currency)} />
+                    <Tooltip formatter={(v) => formatCurrency(Number(v ?? 0), store.currency)} />
                     <Bar dataKey="value" radius={[6, 6, 0, 0]}>
                       {store.blocks.filter(b => b.enabled && (b.result ?? 0) > 0).map(b => (
                         <Cell key={b.id} fill={b.color} />

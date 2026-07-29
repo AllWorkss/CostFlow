@@ -4,19 +4,20 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
-  Factory, GraduationCap, ShoppingCart, Globe, HardHat,
   TrendingUp, FileSpreadsheet, Zap, Shield, BarChart2,
-  ArrowRight, ChevronRight, Sparkles, Activity
+  ArrowRight, ChevronRight, Sparkles, Activity,
+  Factory, GraduationCap, ShoppingCart, Globe, HardHat,
+  type LucideProps,
 } from "lucide-react";
 import { DOMAIN_PRESETS } from "@/lib/engine/domainPresets";
 import { useCostingStore } from "@/lib/store/costingStore";
 import type { Domain } from "@/types/costing";
 
-const ICON_MAP: Record<string, React.ComponentType<{ className?: string; size?: number }>> = {
+const ICON_MAP: Record<string, React.ComponentType<LucideProps>> = {
   Factory, GraduationCap, ShoppingCart, Globe, HardHat,
 };
 
-const FEATURES = [
+const FEATURES: { icon: React.ComponentType<LucideProps>; title: string; desc: string; color: string }[] = [
   { icon: FileSpreadsheet, title: "Live Excel Export", desc: "Real =SUM() & =PRODUCT() formulas, not hardcoded values", color: "#10B981" },
   { icon: Activity, title: "ML Anomaly Detection", desc: "Z-score statistical analysis highlights unusual cost inputs", color: "#8B5CF6" },
   { icon: BarChart2, title: "React Flow Diagram", desc: "Interactive costing architecture visualization with node drilldown", color: "#3B82F6" },
@@ -162,7 +163,7 @@ export default function LandingPage() {
                 }}>
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-3"
                   style={{ background: `${preset.color}20` }}>
-                  <Icon size={22} style={{ color: preset.color }} />
+                  <Icon size={22} color={preset.color} />
                 </div>
                 <h3 className="font-bold text-sm mb-1" style={{ color: isSelected ? preset.color : theme === "dark" ? "#F1F5F9" : "#0F1629" }}>
                   {preset.label}
@@ -202,7 +203,7 @@ export default function LandingPage() {
                 className="metric-card flex gap-4">
                 <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
                   style={{ background: `${feature.color}18` }}>
-                  <Icon size={22} style={{ color: feature.color }} />
+                  <Icon size={22} color={feature.color} />
                 </div>
                 <div>
                   <h3 className="font-bold mb-1" style={{ color: theme === "dark" ? "#F1F5F9" : "#0F1629" }}>
