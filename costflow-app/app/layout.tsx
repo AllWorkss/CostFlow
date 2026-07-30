@@ -13,6 +13,8 @@ export const metadata: Metadata = {
   },
 };
 
+import { PageTransition } from "./components/PageTransition";
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
@@ -26,7 +28,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="min-h-screen antialiased">
         <ThemeScript />
-        {children}
+        <PageTransition>{children}</PageTransition>
       </body>
     </html>
   );

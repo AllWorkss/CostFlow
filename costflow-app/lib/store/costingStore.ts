@@ -104,7 +104,11 @@ export const useCostingStore = create<CostingStore>()(
         get().recompute();
       },
 
-      reorderBlocks: (blocks) => set({ blocks, isDirty: true }),
+      reorderBlocks: (blocks) => {
+        const reordered = blocks.map((b, idx) => ({ ...b, order: idx }));
+        set({ blocks: reordered, isDirty: true });
+        get().recompute();
+      },
 
       deleteBlock: (blockId) => {
         set((state) => ({

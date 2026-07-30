@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, Reorder } from "framer-motion";
 import {
   TrendingUp, Download, RefreshCw, Plus, AlertTriangle,
   ChevronDown, ChevronUp, Trash2, Eye, EyeOff, Sparkles,
   BarChart2, ArrowLeft, Sun, Moon, Factory, GraduationCap,
-  ShoppingCart, Globe, HardHat, X, type LucideProps,
+  ShoppingCart, Globe, HardHat, X, type LucideProps, Info
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -70,6 +70,7 @@ function SellingPriceCard({ value, currency }: { value: number; currency: string
 ══════════════════════════════════════════════════════ */
 export default function DashboardPage() {
   const store = useCostingStore();
+  const [isMounted, setIsMounted] = useState(false);
   const [theme, setTheme]       = useState<"dark"|"light">("dark");
   const [expanded, setExpanded] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
@@ -79,24 +80,14 @@ export default function DashboardPage() {
   const [newBlockLabel, setNewBlockLabel] = useState("");
   const [toast, setToast]       = useState<string | null>(null);
   const [mobileTab, setMobileTab] = useState<"blocks"|"summary">("blocks");
-
-  useEffect(() => {
-    const saved = localStorage.getItem("cf-theme") as "dark"|"light" | null;
-    setTheme(saved ?? "dark");
-    store.recompute();
-  }, []);
-
-  useEffect(() => {
-    document.documentElement.classList.toggle("dark", theme === "dark");
-    localStorage.setItem("cf-theme", theme);
-  }, [theme]);
+  const [showTour, setShowTour] = useState(false);
 
   const notify = useCallback((msg: string) => {
     setToast(msg);
     setTimeout(() => setToast(null), 3200);
   }, []);
 
-  const handleExport = async () => {
+  const handleExport = useCallback(async () => {
     setExporting(true);
     try {
       const payload = {
@@ -129,7 +120,56 @@ export default function DashboardPage() {
       notify("❌ Export failed — please try again.");
     }
     setExporting(false);
-  };
+  }, [store, notify]);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("cf-theme") as "dark"|"light" | null;
+    setTheme(saved ?? "dark");
+    store.recompute();
+    setIsMounted(true);
+    
+    if (!localStorage.getItem("cf-tour-done")) {
+      setShowTour(true);
+    }
+
+    // Keyboard shortcuts
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'e') {
+        e.preventDefault();
+        handleExport();
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key === 'r') {
+        e.preventDefault();
+        store.resetToPreset();
+        notify("Reset to preset");
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [handleExport, store, notify]);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", theme === "dark");
+    localStorage.setItem("cf-theme", theme);
+  }, [theme]);
+
+  if (!isMounted) {
+    return (
+      <div style={{ minHeight:"100svh", background:"var(--bg)" }}>
+        <nav className="h-14 sm:h-16 border-b skeleton w-full rounded-none" style={{ borderColor: "var(--border)" }}></nav>
+        <div className="max-w-screen-2xl mx-auto px-3 sm:px-6 py-4 sm:py-6 flex flex-col xl:flex-row gap-5">
+          <div className="flex-1 space-y-4">
+            <div className="h-8 skeleton w-48 mb-6"></div>
+            {[1,2,3].map(i => <div key={i} className="h-20 skeleton w-full rounded-xl"></div>)}
+          </div>
+          <div className="xl:w-96 space-y-4">
+            <div className="h-64 skeleton w-full rounded-xl"></div>
+            <div className="h-48 skeleton w-full rounded-xl"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const anomalies  = detectAnomalies(store.blocks);
   const priceRec   = computePriceRecommendation(
@@ -157,6 +197,33 @@ export default function DashboardPage() {
   return (
     <div style={{ minHeight:"100svh", background:"var(--bg)" }} className="has-mobile-nav">
 
+      {/* ── Onboarding Tour ── */}
+      <AnimatePresence>
+        {showTour && (
+          <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+            style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }}>
+            <motion.div initial={{ y: 20, scale: 0.9 }} animate={{ y: 0, scale: 1 }} exit={{ y: 20, opacity: 0 }}
+              className="card p-6 max-w-sm w-full text-center">
+              <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center mx-auto mb-4">
+                <Sparkles size={24} className="text-blue-600" />
+              </div>
+              <h3 className="text-xl font-bold mb-2">Welcome to CostFlow! 🚀</h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-5 leading-relaxed">
+                Add, reorder, and configure blocks to calculate your selling price. Swipe blocks on mobile or drag them to reorder. 
+                <br/><br/>Use <kbd className="px-1.5 py-0.5 border rounded bg-gray-100 dark:bg-gray-800 font-mono text-xs">⌘E</kbd> to export an Excel sheet anytime!
+              </p>
+              <button className="btn btn-primary w-full shadow-lg" onClick={() => {
+                setShowTour(false);
+                localStorage.setItem("cf-tour-done", "true");
+              }}>
+                Get Started
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* ── Toast ── */}
       <AnimatePresence>
         {toast && (
@@ -175,7 +242,7 @@ export default function DashboardPage() {
         <div className="flex items-center gap-2 px-3 sm:px-6 h-14 sm:h-16 max-w-screen-2xl mx-auto">
 
           {/* Back */}
-          <Link href="/" className="btn btn-icon flex-shrink-0">
+          <Link href="/" className="btn btn-icon flex-shrink-0" aria-label="Go back">
             <ArrowLeft size={16} />
           </Link>
 
@@ -187,6 +254,7 @@ export default function DashboardPage() {
             </div>
             <input value={store.projectName}
               onChange={e => store.setProjectName(e.target.value)}
+              aria-label="Project Name"
               className="font-bold text-sm sm:text-base bg-transparent border-none outline-none min-w-0 flex-1 truncate"
               style={{ color:"var(--text-1)", maxWidth:180 }}
               placeholder="Project Name" />
@@ -195,28 +263,30 @@ export default function DashboardPage() {
           {/* Right controls — hidden on mobile, shown via bottom nav */}
           <div className="hidden sm:flex items-center gap-2 flex-shrink-0">
             <select value={store.domain} onChange={e => store.setDomain(e.target.value as Domain)}
+              aria-label="Select Domain"
               className="cf-input py-1.5 text-sm" style={{ width:170 }}>
               {DOMAIN_PRESETS.map(p => <option key={p.id} value={p.id}>{p.label.split("—")[0].trim()}</option>)}
             </select>
             <select value={store.currency} onChange={e => store.setCurrency(e.target.value as "INR"|"USD")}
+              aria-label="Select Currency"
               className="cf-input py-1.5 text-sm w-20">
               <option value="INR">₹ INR</option>
               <option value="USD">$ USD</option>
             </select>
-            <button onClick={() => setTheme(isDark ? "light" : "dark")} className="btn btn-icon">
+            <button aria-label="Toggle Theme" onClick={() => setTheme(isDark ? "light" : "dark")} className="btn btn-icon">
               {isDark ? <Sun size={16}/> : <Moon size={16}/>}
             </button>
-            <button onClick={() => { store.resetToPreset(); notify("Reset to preset"); }} className="btn btn-icon">
+            <button aria-label="Reset Blocks" onClick={() => { store.resetToPreset(); notify("Reset to preset"); }} className="btn btn-icon">
               <RefreshCw size={15}/>
             </button>
-            <button onClick={handleExport} disabled={exporting} className="btn btn-primary">
+            <button aria-label="Export Excel" onClick={handleExport} disabled={exporting} className="btn btn-primary">
               <Download size={15}/> {exporting ? "Exporting…" : "Export Excel"}
             </button>
           </div>
 
           {/* Mobile: theme toggle only */}
           <div className="flex sm:hidden items-center gap-2">
-            <button onClick={() => setTheme(isDark ? "light" : "dark")} className="btn btn-icon">
+            <button aria-label="Toggle Theme" onClick={() => setTheme(isDark ? "light" : "dark")} className="btn btn-icon">
               {isDark ? <Sun size={15}/> : <Moon size={15}/>}
             </button>
           </div>
@@ -225,10 +295,12 @@ export default function DashboardPage() {
         {/* Mobile: domain + currency bar */}
         <div className="sm:hidden flex gap-2 px-3 pb-3">
           <select value={store.domain} onChange={e => store.setDomain(e.target.value as Domain)}
+            aria-label="Select Domain Mobile"
             className="cf-input py-1.5 text-sm flex-1">
             {DOMAIN_PRESETS.map(p => <option key={p.id} value={p.id}>{p.label.split("—")[0].trim()}</option>)}
           </select>
           <select value={store.currency} onChange={e => store.setCurrency(e.target.value as "INR"|"USD")}
+            aria-label="Select Currency Mobile"
             className="cf-input py-1.5 text-sm w-20">
             <option value="INR">₹ INR</option>
             <option value="USD">$ USD</option>
@@ -241,6 +313,7 @@ export default function DashboardPage() {
         style={{ borderColor:"var(--border)", background:"var(--bg-card)" }}>
         {(["blocks","summary"] as const).map(tab => (
           <button key={tab} onClick={() => setMobileTab(tab)}
+            aria-label={`Switch to ${tab} tab`}
             className="flex-1 py-3 text-sm font-semibold capitalize transition-colors"
             style={{
               color: mobileTab === tab ? "var(--cf-blue)" : "var(--text-3)",
@@ -271,7 +344,7 @@ export default function DashboardPage() {
       )}
 
       {/* ══════ MAIN CONTENT ══════ */}
-      <div className="max-w-screen-2xl mx-auto px-3 sm:px-6 py-4 sm:py-6">
+      <div className="max-w-screen-2xl mx-auto px-3 sm:px-6 py-4 sm:py-6 overflow-x-hidden">
         <div className="flex flex-col xl:flex-row gap-5">
 
           {/* ════ LEFT: BLOCKS PANEL ════ */}
@@ -282,13 +355,13 @@ export default function DashboardPage() {
                 Costing Blocks
               </h2>
               <div className="flex items-center gap-2">
-                <Link href="/flow" className="hidden sm:flex btn btn-ghost py-1.5 text-xs">
+                <Link href="/flow" aria-label="View Flow" className="hidden sm:flex btn btn-ghost py-1.5 text-xs">
                   <BarChart2 size={14}/> Flow
                 </Link>
-                <button onClick={() => setShowAI(!showAI)} className="hidden sm:flex btn btn-ghost py-1.5 text-xs">
+                <button aria-label="AI Insights" onClick={() => setShowAI(!showAI)} className="hidden sm:flex btn btn-ghost py-1.5 text-xs">
                   <Sparkles size={14}/> AI Insights
                 </button>
-                <button onClick={() => setAddingBlock(true)} className="btn btn-ghost py-1.5 px-3 text-xs">
+                <button aria-label="Add Block" onClick={() => setAddingBlock(true)} className="btn btn-ghost py-1.5 px-3 text-xs">
                   <Plus size={14}/> Add Block
                 </button>
               </div>
@@ -301,6 +374,7 @@ export default function DashboardPage() {
                   exit={{ opacity:0, height:0 }} className="card p-3 mb-3 flex gap-2"
                   style={{ borderColor:"var(--cf-blue)" }}>
                   <input autoFocus value={newBlockLabel} onChange={e => setNewBlockLabel(e.target.value)}
+                    aria-label="New block name"
                     placeholder="Block name e.g. Certification Fee" className="cf-input"
                     onKeyDown={e => {
                       if (e.key === "Enter" && newBlockLabel.trim()) {
@@ -311,33 +385,49 @@ export default function DashboardPage() {
                       if (e.key === "Escape") setAddingBlock(false);
                     }} />
                   <button className="btn btn-primary flex-shrink-0"
+                    aria-label="Confirm add block"
                     onClick={() => {
                       if (newBlockLabel.trim()) {
                         store.addCustomBlock(newBlockLabel.trim());
                         setNewBlockLabel(""); setAddingBlock(false);
                       }
                     }}>Add</button>
-                  <button className="btn btn-icon flex-shrink-0" onClick={() => setAddingBlock(false)}>
+                  <button aria-label="Cancel add block" className="btn btn-icon flex-shrink-0" onClick={() => setAddingBlock(false)}>
                     <X size={15}/>
                   </button>
                 </motion.div>
               )}
             </AnimatePresence>
 
-            {/* Block list */}
-            <div className="space-y-2.5">
-              {store.blocks.map((block, idx) => (
-                <motion.div key={block.id} layout
-                  initial={{ opacity:0, y:12 }} animate={{ opacity:1, y:0 }}
-                  transition={{ delay: idx * 0.035 }}
-                  className={`block-card ${!block.enabled ? "disabled" : ""} ${block.isAnomalous ? "anomalous" : ""}`}>
+            {/* Block list using Framer Motion Reorder */}
+            <Reorder.Group axis="y" values={store.blocks} onReorder={store.reorderBlocks} className="space-y-2.5">
+              {store.blocks.map((block) => (
+                <Reorder.Item key={block.id} value={block}
+                  drag="x" dragConstraints={{ left: 0, right: 0 }} dragElastic={0.2}
+                  onDragEnd={(e, info) => {
+                    if (info.offset.x > 100) {
+                       store.toggleBlock(block.id);
+                    } else if (info.offset.x < -100) {
+                       store.deleteBlock(block.id);
+                       notify(`Removed "${block.label}"`);
+                    }
+                  }}
+                  className={`block-card relative ${!block.enabled ? "disabled" : ""} ${block.isAnomalous ? "anomalous" : ""}`}>
+                  
+                  {/* Swipe indicator hints - behind the content */}
+                  <div className="absolute inset-y-0 left-0 w-16 bg-blue-500/10 flex items-center justify-center opacity-0 transition-opacity" style={{ zIndex: -1 }}>
+                    <Eye size={20} className="text-blue-500" />
+                  </div>
+                  <div className="absolute inset-y-0 right-0 w-16 bg-red-500/10 flex items-center justify-center opacity-0 transition-opacity" style={{ zIndex: -1 }}>
+                    <Trash2 size={20} className="text-red-500" />
+                  </div>
 
                   {/* Block header row */}
-                  <div className="flex items-center gap-2.5 p-3 cursor-pointer"
+                  <div className="flex items-center gap-2.5 p-3 cursor-pointer bg-[var(--bg-card)]"
                     onClick={() => setExpanded(expanded === block.id ? null : block.id)}>
 
                     {/* Icon */}
-                    <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-lg sm:text-xl"
+                    <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-lg sm:text-xl cursor-grab active:cursor-grabbing"
                       style={{ background:`${block.color}15` }}>
                       {BLOCK_EMOJIS[block.type] ?? "⚙️"}
                     </div>
@@ -366,13 +456,13 @@ export default function DashboardPage() {
 
                     {/* Actions */}
                     <div className="flex items-center gap-1 flex-shrink-0">
-                      <button onClick={e => { e.stopPropagation(); store.toggleBlock(block.id); }}
+                      <button aria-label="Toggle Block" onClick={e => { e.stopPropagation(); store.toggleBlock(block.id); }}
                         className="btn btn-icon w-8 h-8 sm:w-9 sm:h-9">
                         {block.enabled
                           ? <Eye size={14} color="var(--cf-blue)"/>
                           : <EyeOff size={14} color="var(--text-3)"/>}
                       </button>
-                      <button onClick={e => { e.stopPropagation(); store.deleteBlock(block.id); notify(`Removed "${block.label}"`); }}
+                      <button aria-label="Delete Block" onClick={e => { e.stopPropagation(); store.deleteBlock(block.id); notify(`Removed "${block.label}"`); }}
                         className="btn btn-icon btn-danger w-8 h-8 sm:w-9 sm:h-9">
                         <Trash2 size={14}/>
                       </button>
@@ -387,7 +477,7 @@ export default function DashboardPage() {
                     {expanded === block.id && (
                       <motion.div initial={{ opacity:0, height:0 }} animate={{ opacity:1, height:"auto" }}
                         exit={{ opacity:0, height:0 }}
-                        className="border-t px-3 pb-4 pt-3"
+                        className="border-t px-3 pb-4 pt-3 bg-[var(--bg-card)]"
                         style={{ borderColor:"var(--border)" }}>
 
                         {/* Formula display */}
@@ -405,6 +495,7 @@ export default function DashboardPage() {
                                 {variable.unit && <span className="badge badge-blue ml-1.5">{variable.unit}</span>}
                               </label>
                               <input type="number" value={variable.value}
+                                aria-label={variable.name}
                                 onChange={e => store.updateBlockVariable(block.id, variable.id, parseFloat(e.target.value) || 0)}
                                 className="cf-input" min={0}
                                 step={variable.unit?.includes("%") ? 0.01 : undefined} />
@@ -419,9 +510,14 @@ export default function DashboardPage() {
                       </motion.div>
                     )}
                   </AnimatePresence>
-                </motion.div>
+                </Reorder.Item>
               ))}
+            </Reorder.Group>
+            
+            <div className="mt-4 text-xs text-center text-gray-500 opacity-60 flex items-center justify-center gap-2 show-mobile">
+              <Info size={12}/> Swipe blocks left to delete, right to toggle.
             </div>
+            
           </div>
 
           {/* ════ RIGHT: SUMMARY PANEL ════ */}
@@ -491,8 +587,8 @@ export default function DashboardPage() {
                     <Legend
                       iconType="circle"
                       iconSize={8}
-                      formatter={(value) => (
-                        <span style={{ color:"var(--text-2)", fontSize:11 }}>{value}</span>
+                      formatter={(value, entry: any) => (
+                        <span style={{ color:"var(--text-2)", fontSize:11 }}>{entry.payload?.name || value}</span>
                       )}
                     />
                   </PieChart>
@@ -514,6 +610,7 @@ export default function DashboardPage() {
                       <strong style={{ color:"var(--cf-purple)" }}>{(targetMargin * 100).toFixed(0)}%</strong>
                     </label>
                     <input type="range" min={0.05} max={0.60} step={0.01} value={targetMargin}
+                      aria-label="Target Margin"
                       onChange={e => setTargetMargin(parseFloat(e.target.value))}
                       className="w-full" style={{ accentColor:"var(--cf-purple)" }} />
                   </div>
@@ -561,7 +658,7 @@ export default function DashboardPage() {
             )}
 
             {/* Export CTA */}
-            <button onClick={handleExport} disabled={exporting}
+            <button aria-label="Generate Excel" onClick={handleExport} disabled={exporting}
               className="btn btn-primary w-full py-4 text-sm sm:text-base justify-center pulse-glow">
               <Download size={18}/>
               {exporting ? "Generating Excel…" : "Export Excel with Real Formulas"}
@@ -572,25 +669,25 @@ export default function DashboardPage() {
 
       {/* ══════ MOBILE BOTTOM NAV ══════ */}
       <div className="mobile-nav safe-bottom">
-        <Link href="/" className="flex flex-col items-center gap-0.5 text-xs px-2"
+        <Link href="/" aria-label="Home" className="flex flex-col items-center gap-0.5 text-xs px-2"
           style={{ color:"var(--text-3)" }}>
           <ArrowLeft size={20}/> <span>Home</span>
         </Link>
-        <button onClick={() => setMobileTab("blocks")}
+        <button aria-label="Blocks tab" onClick={() => setMobileTab("blocks")}
           className="flex flex-col items-center gap-0.5 text-xs px-2"
           style={{ color: mobileTab === "blocks" ? "var(--cf-blue)" : "var(--text-3)" }}>
           <span className="text-xl">🧱</span><span>Blocks</span>
         </button>
-        <button onClick={() => setMobileTab("summary")}
+        <button aria-label="Summary tab" onClick={() => setMobileTab("summary")}
           className="flex flex-col items-center gap-0.5 text-xs px-2"
           style={{ color: mobileTab === "summary" ? "var(--cf-blue)" : "var(--text-3)" }}>
           <span className="text-xl">📊</span><span>Summary</span>
         </button>
-        <Link href="/flow" className="flex flex-col items-center gap-0.5 text-xs px-2"
+        <Link href="/flow" aria-label="Flow view" className="flex flex-col items-center gap-0.5 text-xs px-2"
           style={{ color:"var(--text-3)" }}>
           <BarChart2 size={20}/><span>Flow</span>
         </Link>
-        <button onClick={handleExport} disabled={exporting}
+        <button aria-label="Export button" onClick={handleExport} disabled={exporting}
           className="flex flex-col items-center gap-0.5 text-xs px-2"
           style={{ color: exporting ? "var(--text-3)" : "var(--cf-blue)" }}>
           <Download size={20}/><span>{exporting ? "…" : "Export"}</span>
