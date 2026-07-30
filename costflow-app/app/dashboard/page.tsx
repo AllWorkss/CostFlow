@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, Suspense } from "react";
+import { useEffect, useState, useCallback, Suspense, useMemo } from "react";
 import { motion, AnimatePresence, Reorder } from "framer-motion";
 import {
   TrendingUp, Download, RefreshCw, Plus, AlertTriangle,
@@ -276,15 +276,19 @@ export function DashboardPageContent() {
   const enabledBlocks = store.blocks.filter(b => b.enabled && (b.result ?? 0) > 0);
 
   /* ── Recharts data ── */
-  const pieData = store.summary?.costBreakdown.map(b => ({
-    name: b.label, value: b.value, color: b.color,
-  })) ?? [];
+  const pieData = useMemo(() => {
+    return store.summary?.costBreakdown.map(b => ({
+      name: b.label, value: b.value, color: b.color,
+    })) ?? [];
+  }, [store.summary?.costBreakdown]);
 
-  const barData = enabledBlocks.map(b => ({
-    name: b.label.split(" ").slice(0,2).join(" "),
-    value: Math.round(b.result ?? 0),
-    color: b.color,
-  }));
+  const barData = useMemo(() => {
+    return enabledBlocks.map(b => ({
+      name: b.label.split(" ").slice(0,2).join(" "),
+      value: Math.round(b.result ?? 0),
+      color: b.color,
+    }));
+  }, [enabledBlocks]);
 
   /* ══════ JSX ══════ */
   return (
