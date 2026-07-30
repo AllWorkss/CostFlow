@@ -21,6 +21,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN npx prisma generate
 
 # Create and seed SQLite database
+ENV DATABASE_URL="file:./dev.db"
 RUN npx prisma db push --accept-data-loss && npx tsx seed.ts
 
 # Build Next.js app
