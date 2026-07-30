@@ -171,10 +171,10 @@ export function DashboardPageContent() {
     }
   };
 
+  // Initialization (Theme, Tour, DB Load)
   useEffect(() => {
     const saved = localStorage.getItem("cf-theme") as "dark"|"light" | null;
     setTheme(saved ?? "dark");
-    store.recompute();
     
     // Load from DB
     if (projectId) {
@@ -186,21 +186,26 @@ export function DashboardPageContent() {
             store.loadProjectState(projectId, data);
             store.setProjectName(project.name);
           }
+          store.recompute();
           setIsMounted(true);
         })
         .catch(err => {
           console.error("Failed to load project", err);
+          store.recompute();
           setIsMounted(true);
         });
     } else {
+      store.recompute();
       setIsMounted(true);
     }
     
     if (!localStorage.getItem("cf-tour-done")) {
       setShowTour(true);
     }
+  }, [projectId]);
 
-    // Keyboard shortcuts
+  // Keyboard shortcuts
+  useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'e') {
         e.preventDefault();
@@ -678,24 +683,26 @@ export function DashboardPageContent() {
                 <h3 className="font-bold mb-3 flex items-center gap-2 text-sm" style={{ color:"var(--text-1)" }}>
                   <BarChart2 size={16} color="var(--cf-cyan)"/> Cost Breakdown
                 </h3>
-                <ResponsiveContainer width="100%" height={220}>
-                  <PieChart>
-                    <Pie data={pieData} cx="50%" cy="45%" innerRadius={52} outerRadius={82}
-                      dataKey="value" paddingAngle={3} nameKey="name">
-                      {pieData.map((entry) => (
-                        <Cell key={entry.name} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip content={<ChartTooltip currency={store.currency} />} />
-                    <Legend
-                      iconType="circle"
-                      iconSize={8}
-                      formatter={(value, entry: any) => (
-                        <span style={{ color:"var(--text-2)", fontSize:11 }}>{entry.payload?.name || value}</span>
-                      )}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
+                <div style={{ width: "100%", height: 220, minWidth: 0 }}>
+                  <ResponsiveContainer width="99%" height="100%">
+                    <PieChart>
+                      <Pie data={pieData} cx="50%" cy="45%" innerRadius={52} outerRadius={82}
+                        dataKey="value" paddingAngle={3} nameKey="name">
+                        {pieData.map((entry) => (
+                          <Cell key={entry.name} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip content={(props: any) => <ChartTooltip {...props} currency={store.currency} />} />
+                      <Legend
+                        iconType="circle"
+                        iconSize={8}
+                        formatter={(value, entry: any) => (
+                          <span style={{ color:"var(--text-2)", fontSize:11 }}>{entry.payload?.name || value}</span>
+                        )}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
               </div>
             )}
 
@@ -743,20 +750,22 @@ export function DashboardPageContent() {
                 <h3 className="font-bold mb-3 text-sm" style={{ color:"var(--text-1)" }}>
                   Block Contribution
                 </h3>
-                <ResponsiveContainer width="100%" height={180}>
-                  <BarChart data={barData} margin={{ left:-16, right:4 }}>
-                    <CartesianGrid strokeDasharray="3 3"
-                      stroke={isDark ? "rgba(59,130,246,0.1)" : "#E2E8F0"} />
-                    <XAxis dataKey="name" tick={{ fontSize:9, fill:"var(--text-3)" }} />
-                    <YAxis tick={{ fontSize:9, fill:"var(--text-3)" }} />
-                    <Tooltip content={<ChartTooltip currency={store.currency} />} />
-                    <Bar dataKey="value" radius={[6,6,0,0]}>
-                      {barData.map(b => (
-                        <Cell key={b.name} fill={b.color} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
+                <div style={{ width: "100%", height: 180, minWidth: 0 }}>
+                  <ResponsiveContainer width="99%" height="100%">
+                    <BarChart data={barData} margin={{ left:-16, right:4 }}>
+                      <CartesianGrid strokeDasharray="3 3"
+                        stroke={isDark ? "rgba(59,130,246,0.1)" : "#E2E8F0"} />
+                      <XAxis dataKey="name" tick={{ fontSize:9, fill:"var(--text-3)" }} />
+                      <YAxis tick={{ fontSize:9, fill:"var(--text-3)" }} />
+                      <Tooltip content={(props: any) => <ChartTooltip {...props} currency={store.currency} />} />
+                      <Bar dataKey="value" radius={[6,6,0,0]}>
+                        {barData.map(b => (
+                          <Cell key={b.name} fill={b.color} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
               </div>
             )}
 
