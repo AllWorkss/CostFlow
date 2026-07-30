@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, Suspense } from "react";
 import { motion, AnimatePresence, Reorder } from "framer-motion";
 import {
   TrendingUp, Download, RefreshCw, Plus, AlertTriangle,
@@ -8,6 +8,7 @@ import {
   BarChart2, ArrowLeft, Sun, Moon, Factory, GraduationCap,
   ShoppingCart, Globe, HardHat, X, type LucideProps, Info
 } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   PieChart, Pie, Cell, BarChart, Bar,
@@ -68,8 +69,10 @@ function SellingPriceCard({ value, currency }: { value: number; currency: string
 /* ══════════════════════════════════════════════════════
    MAIN COMPONENT
 ══════════════════════════════════════════════════════ */
-export default function DashboardPage() {
+export function DashboardPageContent() {
   const store = useCostingStore();
+  const searchParams = useSearchParams();
+  const projectId = searchParams.get("projectId");
   const [isMounted, setIsMounted] = useState(false);
   const [theme, setTheme]       = useState<"dark"|"light">("dark");
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -126,7 +129,26 @@ export default function DashboardPage() {
     const saved = localStorage.getItem("cf-theme") as "dark"|"light" | null;
     setTheme(saved ?? "dark");
     store.recompute();
-    setIsMounted(true);
+    
+    // Load from DB
+    if (projectId) {
+      fetch(`/api/projects/${projectId}`)
+        .then(res => res.json())
+        .then(project => {
+          if (project && project.data) {
+            const data = JSON.parse(project.data);
+            store.loadProjectState(projectId, data);
+            store.setProjectName(project.name);
+          }
+          setIsMounted(true);
+        })
+        .catch(err => {
+          console.error("Failed to load project", err);
+          setIsMounted(true);
+        });
+    } else {
+      setIsMounted(true);
+    }
     
     if (!localStorage.getItem("cf-tour-done")) {
       setShowTour(true);
@@ -147,6 +169,31 @@ export default function DashboardPage() {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleExport, store, notify]);
+
+  // Auto-save
+  useEffect(() => {
+    if (store.isDirty && projectId && isMounted) {
+      const timer = setTimeout(() => {
+        fetch(`/api/projects/${projectId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: store.projectName,
+            data: JSON.stringify({
+              domain: store.domain,
+              blocks: store.blocks,
+              currency: store.currency,
+              companyName: store.companyName,
+              targetMarginPct: store.targetMarginPct,
+            })
+          })
+        }).then(() => {
+          useCostingStore.setState({ isDirty: false });
+        });
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [store.isDirty, store.blocks, store.projectName, store.domain, store.currency, store.companyName, store.targetMarginPct, projectId, isMounted]);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
@@ -242,7 +289,7 @@ export default function DashboardPage() {
         <div className="flex items-center gap-2 px-3 sm:px-6 h-14 sm:h-16 max-w-screen-2xl mx-auto">
 
           {/* Back */}
-          <Link href="/" className="btn btn-icon flex-shrink-0" aria-label="Go back">
+          <Link href="/dashboard/projects" className="btn btn-icon flex-shrink-0" aria-label="Go back to workspace">
             <ArrowLeft size={16} />
           </Link>
 
@@ -694,5 +741,13 @@ export default function DashboardPage() {
         </button>
       </div>
     </div>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gray-50 flex items-center justify-center">Loading Workspace...</div>}>
+      <DashboardPageContent />
+    </Suspense>
   );
 }
