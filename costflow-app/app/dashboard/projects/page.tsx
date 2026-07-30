@@ -93,7 +93,7 @@ export default function ProjectsDashboard() {
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">Workspace</h1>
-            <p className="text-gray-500 dark:text-gray-400 mt-1">Manage your cost sheets, templates, and versions.</p>
+            <p className="text-gray-500 dark:text-gray-400 mt-1">Manage your cost sheets, templates, and team.</p>
           </div>
           
           <div className="flex gap-3">
@@ -111,6 +111,16 @@ export default function ProjectsDashboard() {
             </button>
           </div>
         </header>
+
+        {/* Workspace Tabs */}
+        <div className="flex border-b border-gray-200 dark:border-zinc-800">
+          <button className="px-6 py-3 border-b-2 border-[var(--cf-blue)] text-[var(--cf-blue)] font-medium">
+            Projects
+          </button>
+          <button className="px-6 py-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 font-medium cursor-not-allowed opacity-50" title="Coming soon">
+            Team Settings
+          </button>
+        </div>
 
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">

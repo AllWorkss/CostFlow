@@ -6,7 +6,7 @@ import {
   TrendingUp, Download, RefreshCw, Plus, AlertTriangle,
   ChevronDown, ChevronUp, Trash2, Eye, EyeOff, Sparkles,
   BarChart2, ArrowLeft, Sun, Moon, Factory, GraduationCap,
-  ShoppingCart, Globe, HardHat, X, type LucideProps, Info
+  ShoppingCart, Globe, HardHat, X, type LucideProps, Info, Share2, Clock
 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -84,6 +84,9 @@ export function DashboardPageContent() {
   const [toast, setToast]       = useState<string | null>(null);
   const [mobileTab, setMobileTab] = useState<"blocks"|"summary">("blocks");
   const [showTour, setShowTour] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [versions, setVersions] = useState<any[]>([]);
+  const [savingVersion, setSavingVersion] = useState(false);
 
   const notify = useCallback((msg: string) => {
     setToast(msg);
@@ -124,6 +127,49 @@ export function DashboardPageContent() {
     }
     setExporting(false);
   }, [store, notify]);
+
+  const handleShare = useCallback(() => {
+    if (!projectId) return;
+    const url = `${window.location.origin}/share/${projectId}`;
+    navigator.clipboard.writeText(url);
+    notify("✅ Share link copied to clipboard!");
+  }, [projectId, notify]);
+
+  const loadVersions = useCallback(async () => {
+    if (!projectId) return;
+    try {
+      const res = await fetch(`/api/projects/${projectId}/versions`);
+      const data = await res.json();
+      if (Array.isArray(data)) setVersions(data);
+    } catch (e) {
+      console.error(e);
+    }
+  }, [projectId]);
+
+  const saveVersion = async () => {
+    if (!projectId) return;
+    setSavingVersion(true);
+    try {
+      await fetch(`/api/projects/${projectId}/versions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: `Snapshot ${new Date().toLocaleString()}` })
+      });
+      notify("✅ Version saved!");
+      loadVersions();
+    } catch (e) {
+      notify("❌ Failed to save version");
+    }
+    setSavingVersion(false);
+  };
+
+  const restoreVersion = (versionDataStr: string) => {
+    if (confirm("Restore this version? Unsaved changes will be lost.")) {
+      const data = JSON.parse(versionDataStr);
+      store.loadProjectState(projectId!, data);
+      notify("✅ Version restored!");
+    }
+  };
 
   useEffect(() => {
     const saved = localStorage.getItem("cf-theme") as "dark"|"light" | null;
@@ -322,6 +368,12 @@ export function DashboardPageContent() {
             </select>
             <button aria-label="Toggle Theme" onClick={() => setTheme(isDark ? "light" : "dark")} className="btn btn-icon">
               {isDark ? <Sun size={16}/> : <Moon size={16}/>}
+            </button>
+            <button aria-label="Share" onClick={handleShare} className="btn btn-icon" title="Share Project">
+              <Share2 size={15}/>
+            </button>
+            <button aria-label="Version History" onClick={() => { setShowHistory(true); loadVersions(); }} className="btn btn-icon" title="Version History">
+              <Clock size={15}/>
             </button>
             <button aria-label="Reset Blocks" onClick={() => { store.resetToPreset(); notify("Reset to preset"); }} className="btn btn-icon">
               <RefreshCw size={15}/>
@@ -740,6 +792,39 @@ export function DashboardPageContent() {
           <Download size={20}/><span>{exporting ? "…" : "Export"}</span>
         </button>
       </div>
+
+      {/* Version History Sidebar */}
+      <AnimatePresence>
+        {showHistory && (
+          <motion.div initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }}
+            className="fixed top-0 right-0 h-full w-80 bg-white dark:bg-zinc-900 border-l border-gray-200 dark:border-zinc-800 shadow-2xl z-50 flex flex-col">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-zinc-800">
+              <h3 className="font-bold flex items-center gap-2"><Clock size={18} /> Version History</h3>
+              <button onClick={() => setShowHistory(false)} className="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-zinc-800"><X size={18}/></button>
+            </div>
+            <div className="p-4 border-b border-gray-200 dark:border-zinc-800">
+              <button onClick={saveVersion} disabled={savingVersion} className="w-full py-2 bg-[var(--cf-blue)] text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium">
+                {savingVersion ? "Saving..." : "Save Current Snapshot"}
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              {versions.length === 0 ? (
+                <div className="text-sm text-gray-500 text-center py-4">No snapshots saved yet.</div>
+              ) : (
+                versions.map(v => (
+                  <div key={v.id} className="p-3 border border-gray-200 dark:border-zinc-800 rounded-xl bg-gray-50 dark:bg-zinc-800/50 hover:border-[var(--cf-blue)] transition-colors group">
+                    <div className="font-medium text-sm mb-1">{v.name}</div>
+                    <div className="text-xs text-gray-500 mb-3">{new Date(v.createdAt).toLocaleString()}</div>
+                    <button onClick={() => restoreVersion(v.data)} className="text-xs font-medium text-[var(--cf-blue)] opacity-0 group-hover:opacity-100 transition-opacity">
+                      Restore Version
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
