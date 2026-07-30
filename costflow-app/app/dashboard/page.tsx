@@ -246,8 +246,6 @@ export function DashboardPageContent() {
     localStorage.setItem("cf-theme", theme);
   }, [theme]);
 
-  const enabledBlocks = store.blocks.filter(b => b.enabled && (b.result ?? 0) > 0);
-
   /* ── Recharts data ── */
   const pieData = useMemo(() => {
     return store.summary?.costBreakdown.map(b => ({
@@ -256,12 +254,13 @@ export function DashboardPageContent() {
   }, [store.summary?.costBreakdown]);
 
   const barData = useMemo(() => {
-    return enabledBlocks.map(b => ({
+    const enabled = store.blocks.filter(b => b.enabled && (b.result ?? 0) > 0);
+    return enabled.map(b => ({
       name: b.label.split(" ").slice(0,2).join(" "),
       value: Math.round(b.result ?? 0),
       color: b.color,
     }));
-  }, [enabledBlocks]);
+  }, [store.blocks]);
 
   if (!isMounted) {
     return (
