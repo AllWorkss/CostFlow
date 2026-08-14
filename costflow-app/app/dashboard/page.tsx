@@ -327,7 +327,8 @@ export function DashboardPageContent() {
     if (!localStorage.getItem("cf-tour-done")) {
       setShowTour(true);
     }
-  }, [projectId, loadProjectState, setProjectName, recompute]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId]);
 
   // Keyboard shortcuts
   useEffect(() => {
