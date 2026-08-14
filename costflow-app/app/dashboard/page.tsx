@@ -798,6 +798,8 @@ export function DashboardPageContent() {
       {/* ══════ MAIN CONTENT ══════ */}
       <div className="max-w-screen-2xl mx-auto px-3 sm:px-6 py-4 sm:py-6 overflow-x-hidden">
         <div className="flex flex-col xl:flex-row gap-5">
+          {/* ════ LEFT: BLOCKS PANEL ════ */}
+          <div className={`xl:flex-1 ${mobileTab === "summary" ? "hidden sm:block" : "block"}`}>
             {/* Quick-Start Industry Presets Bar */}
             <div className="card p-3 mb-4 flex items-center justify-between gap-2 overflow-x-auto">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5 flex-shrink-0">
