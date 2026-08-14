@@ -36,21 +36,21 @@
 
 ---
 
-## PHASE 2 — UI Polish, Mobile-First & UX Overhaul 🔄 IN PROGRESS
-**Timeline**: Week 1–2 | **Status**: Active
+## PHASE 2 — UI Polish, Mobile-First & UX Overhaul ✅ DONE
+**Timeline**: Week 1–2 | **Status**: Complete
 
 ### Goals
-- [ ] Full mobile responsiveness (320px → 4K)
-- [ ] Bottom navigation bar for mobile
-- [ ] Collapsible block cards with swipe gestures
-- [ ] Fix pie chart legend (show real category names)
-- [ ] Add skeleton loaders for smooth UX
-- [ ] Keyboard shortcuts (⌘E = export, ⌘R = reset)
-- [ ] Block drag-and-drop reorder (mouse + touch)
-- [ ] Smooth page transitions with Framer Motion
-- [ ] Onboarding tooltip tour (first-time users)
-- [ ] Print-friendly CSS mode
-- [ ] Accessibility: ARIA labels, focus rings, screen reader support
+- [x] Full mobile responsiveness (320px → 4K)
+- [x] Bottom navigation bar for mobile
+- [x] Collapsible block cards with swipe gestures
+- [x] Fix pie chart legend (show real category names)
+- [x] Add skeleton loaders for smooth UX
+- [x] Keyboard shortcuts (⌘E = export, ⌘R = reset)
+- [x] Block drag-and-drop reorder (mouse + touch)
+- [x] Smooth page transitions with Framer Motion
+- [x] Onboarding tooltip tour (first-time users)
+- [x] Print-friendly CSS mode
+- [x] Accessibility: ARIA labels, focus rings, screen reader support
 
 ---
 

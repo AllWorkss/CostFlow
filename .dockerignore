@@ -1,0 +1,8 @@
+**/node_modules
+**/.next
+costflow-app/node_modules
+costflow-app/.next
+.git
+.gitignore
+README.md
+DEVELOPMENT.md

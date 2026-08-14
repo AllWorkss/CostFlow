@@ -5,7 +5,22 @@
 
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { CostingBlock, Domain, CostingSummary, GeometryConfig, GeometryMetrics, LiquidBatchConfig, LiquidBatchMetrics, UserRole, UserSession, CostingApprovalStatus, AuditLogEntry, OpexConfig, PayrollConfig, CompanyFinancialMetrics } from "@/types/costing";
+import type {
+  CostingBlock,
+  Domain,
+  CostingSummary,
+  GeometryConfig,
+  GeometryMetrics,
+  LiquidBatchConfig,
+  LiquidBatchMetrics,
+  UserRole,
+  UserSession,
+  CostingApprovalStatus,
+  AuditLogEntry,
+  OpexConfig,
+  PayrollConfig,
+  CompanyFinancialMetrics,
+} from "@/types/costing";
 import { DOMAIN_PRESETS } from "@/lib/engine/domainPresets";
 import { computeAllBlocks, calculateSummary } from "@/lib/engine/formulaEngine";
 import { detectAnomalies, markBlockAnomalies } from "@/lib/ml/anomalyDetector";
@@ -23,6 +38,7 @@ interface CostingStore {
   blocks: CostingBlock[];
   summary: CostingSummary | null;
   currency: "INR" | "USD";
+  projectId: string | null;
   projectName: string;
   companyName: string;
   targetMarginPct: number;
@@ -56,15 +72,10 @@ interface CostingStore {
   setCurrentUserRole: (role: UserRole) => void;
   setApprovalStatus: (status: CostingApprovalStatus) => void;
   addAuditLog: (entry: AuditLogEntry) => void;
+  loadProjectState: (projectId: string, data: any) => void;
   recompute: () => void;
   resetToPreset: () => void;
 }
-
-const defaultSummary: CostingSummary = {
-  subtotal: 0, wastageAmount: 0, taxAmount: 0,
-  profitAmount: 0, sellingPrice: 0, breakEvenUnits: 0,
-  marginPercent: 0, costBreakdown: [],
-};
 
 function loadPresetBlocks(domain: Domain): CostingBlock[] {
   const preset = DOMAIN_PRESETS.find((p) => p.id === domain);
@@ -79,6 +90,7 @@ export const useCostingStore = create<CostingStore>()(
       blocks: loadPresetBlocks("manufacturing"),
       summary: null,
       currency: "INR",
+      projectId: null,
       projectName: "New Costing Project",
       companyName: "",
       targetMarginPct: 0.25,
@@ -100,11 +112,11 @@ export const useCostingStore = create<CostingStore>()(
         get().recompute();
       },
 
-      setProjectName: (name) => set({ projectName: name }),
-      setCompanyName: (name) => set({ companyName: name }),
-      setCurrency: (currency) => set({ currency }),
+      setProjectName: (name) => set({ projectName: name, isDirty: true }),
+      setCompanyName: (name) => set({ companyName: name, isDirty: true }),
+      setCurrency: (currency) => set({ currency, isDirty: true }),
       setTargetMargin: (pct) => {
-        set({ targetMarginPct: pct });
+        set({ targetMarginPct: pct, isDirty: true });
         get().recompute();
       },
 
@@ -166,7 +178,11 @@ export const useCostingStore = create<CostingStore>()(
         get().recompute();
       },
 
-      reorderBlocks: (blocks) => set({ blocks, isDirty: true }),
+      reorderBlocks: (blocks) => {
+        const reordered = blocks.map((b, idx) => ({ ...b, order: idx }));
+        set({ blocks: reordered, isDirty: true });
+        get().recompute();
+      },
 
       deleteBlock: (blockId) => {
         set((state) => ({
@@ -353,6 +369,30 @@ export const useCostingStore = create<CostingStore>()(
         }));
       },
 
+      loadProjectState: (projectId: string, data: any) => {
+        set({
+          projectId,
+          projectName: data.projectName || "Untitled",
+          domain: data.domain || "manufacturing",
+          blocks: data.blocks || loadPresetBlocks("manufacturing"),
+          currency: data.currency || "INR",
+          companyName: data.companyName || "",
+          targetMarginPct: data.targetMarginPct || 0.25,
+          isDirty: false,
+          geometryConfig: DEFAULT_GEOMETRY_CONFIG,
+          geometryMetrics: calculateGeometryMetrics(DEFAULT_GEOMETRY_CONFIG),
+          liquidBatchConfig: DEFAULT_LIQUID_BATCH_CONFIG,
+          liquidBatchMetrics: calculateLiquidBatchMetrics(DEFAULT_LIQUID_BATCH_CONFIG),
+          currentUser: DEFAULT_SUPER_ADMIN_SESSION,
+          approvalStatus: "draft",
+          auditLogs: [],
+          opexConfig: DEFAULT_OPEX_CONFIG,
+          payrollConfig: DEFAULT_PAYROLL_CONFIG,
+          companyMetrics: calculateCompanyFinancials(DEFAULT_OPEX_CONFIG, DEFAULT_PAYROLL_CONFIG, 150000, 0, 0.25),
+        });
+        get().recompute();
+      },
+
       recompute: () => {
         const { blocks, targetMarginPct } = get();
         const computed = computeAllBlocks(blocks);
@@ -386,6 +426,3 @@ export const useCostingStore = create<CostingStore>()(
     }
   )
 );
-
-
-
