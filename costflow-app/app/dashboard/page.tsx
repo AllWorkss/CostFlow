@@ -8,7 +8,7 @@ import {
   ChevronDown, ChevronUp, Trash2, Eye, EyeOff, Sparkles,
   BarChart2, ArrowLeft, Sun, Moon, Factory, GraduationCap,
   ShoppingCart, Globe, HardHat, X, ArrowRightLeft, Droplets,
-  Shield, Activity, Lock, UserCheck, Building2, Info, Share2, Clock,
+  Shield, Activity, Lock, UserCheck, Building2, Info, Share2, Clock, FileText,
   type LucideProps,
 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
