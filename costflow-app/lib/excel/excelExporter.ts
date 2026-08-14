@@ -1,7 +1,6 @@
 // ============================================================
 // CostFlow — Excel Exporter with REAL Formula Cells
 // ============================================================
-import ExcelJS from "exceljs";
 import type { ExportConfig } from "@/types/costing";
 
 const NAVY = "FF0F1629";
@@ -20,6 +19,7 @@ function currencyFormat(currency: string) {
 function pctFormat() { return '0.00%'; }
 
 export async function generateExcelExport(config: ExportConfig): Promise<Buffer> {
+  const ExcelJS = (await import("exceljs")).default;
   const workbook = new ExcelJS.Workbook();
   workbook.creator = "CostFlow — CSF Costing";
   workbook.created = new Date(config.exportedAt);

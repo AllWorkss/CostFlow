@@ -65,6 +65,13 @@ code, pre, .mono { font-family: 'JetBrains Mono', monospace; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(59,130,246,0.4); border-radius: 99px; }
 
+/* ─── GPU Hardware Acceleration & Performance Containment ─── */
+.gpu-accelerated {
+  contain: content;
+  will-change: transform, opacity;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
 /* ─── Safe area for mobile ─── */
 .safe-bottom { padding-bottom: env(safe-area-inset-bottom, 16px); }
 .safe-top    { padding-top: env(safe-area-inset-top, 0px); }
