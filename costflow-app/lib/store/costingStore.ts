@@ -20,7 +20,14 @@ import type {
   OpexConfig,
   PayrollConfig,
   CompanyFinancialMetrics,
+  MarginMode,
+  ForexConfig,
+  CommodityIndex,
+  WhatIfScenarioConfig,
+  ReverseTargetSolverConfig,
+  CostSheetVersionSnapshot,
 } from "@/types/costing";
+import { DEFAULT_SPOT_RATES, DEFAULT_COMMODITY_INDICES } from "@/lib/engine/forexEngine";
 import { DOMAIN_PRESETS } from "@/lib/engine/domainPresets";
 import { computeAllBlocks, calculateSummary } from "@/lib/engine/formulaEngine";
 import { detectAnomalies, markBlockAnomalies } from "@/lib/ml/anomalyDetector";
@@ -59,6 +66,12 @@ interface CostingStore {
   targetPriceSolverEnabled: boolean;
   targetSellingPrice: number;
 
+  forexConfig: ForexConfig;
+  commodityIndices: CommodityIndex[];
+  whatIfConfig: WhatIfScenarioConfig;
+  reverseSolverConfig: ReverseTargetSolverConfig;
+  savedVersions: CostSheetVersionSnapshot[];
+
   // Actions
   setDomain: (domain: Domain) => void;
   setProjectName: (name: string) => void;
@@ -68,6 +81,10 @@ interface CostingStore {
   setMarginMode: (mode: MarginMode) => void;
   setBatchMultiplier: (mult: number) => void;
   setTargetPriceSolver: (enabled: boolean, targetSellingPrice?: number) => void;
+  setForexConfig: (config: Partial<ForexConfig>) => void;
+  setWhatIfConfig: (config: Partial<WhatIfScenarioConfig>) => void;
+  setReverseSolverConfig: (config: Partial<ReverseTargetSolverConfig>) => void;
+  saveVersionSnapshot: (versionName: string, notes?: string) => void;
   updateBlockVariable: (blockId: string, variableId: string, value: number) => void;
   toggleBlock: (blockId: string) => void;
   reorderBlocks: (blocks: CostingBlock[]) => void;
@@ -118,6 +135,26 @@ export const useCostingStore = create<CostingStore>()(
       targetPriceSolverEnabled: false,
       targetSellingPrice: 0,
 
+      forexConfig: {
+        baseCurrency: "INR",
+        targetCurrency: "USD",
+        hedgeBufferPct: 2.0,
+        spotRates: DEFAULT_SPOT_RATES,
+      },
+      commodityIndices: DEFAULT_COMMODITY_INDICES,
+      whatIfConfig: {
+        rmPriceVolatilityPct: 0,
+        scrapShiftPct: 0,
+        inflationPct: 0,
+        volumeDiscountScale: 1,
+      },
+      reverseSolverConfig: {
+        targetPrice: 500,
+        targetMarginPct: 0.25,
+        lockedVariableIds: [],
+      },
+      savedVersions: [],
+
       setDomain: (domain) => {
         const blocks = loadPresetBlocks(domain);
         set({ domain, blocks, isDirty: false });
@@ -147,6 +184,43 @@ export const useCostingStore = create<CostingStore>()(
           isDirty: true,
         }));
         get().recompute();
+      },
+      setForexConfig: (cfg) => {
+        set((state) => ({
+          forexConfig: { ...state.forexConfig, ...cfg },
+          isDirty: true,
+        }));
+        get().recompute();
+      },
+      setWhatIfConfig: (cfg) => {
+        set((state) => ({
+          whatIfConfig: { ...state.whatIfConfig, ...cfg },
+          isDirty: true,
+        }));
+      },
+      setReverseSolverConfig: (cfg) => {
+        set((state) => ({
+          reverseSolverConfig: { ...state.reverseSolverConfig, ...cfg },
+          isDirty: true,
+        }));
+      },
+      saveVersionSnapshot: (versionName, notes = "") => {
+        const { blocks, summary, currency, currentUser, savedVersions } = get();
+        if (!summary) return;
+        const versionNumber = `v${savedVersions.length + 1}.0`;
+        const newSnapshot: CostSheetVersionSnapshot = {
+          id: `ver-${Date.now()}`,
+          versionName: versionName || `Version ${versionNumber}`,
+          versionNumber,
+          timestamp: new Date().toLocaleString(),
+          authorName: currentUser.name,
+          authorRole: currentUser.role,
+          notes,
+          blocksSnapshot: JSON.parse(JSON.stringify(blocks)),
+          summarySnapshot: JSON.parse(JSON.stringify(summary)),
+          currencySnapshot: currency as any,
+        };
+        set({ savedVersions: [newSnapshot, ...savedVersions] });
       },
 
       updateBlockVariable: (blockId, variableId, value) => {

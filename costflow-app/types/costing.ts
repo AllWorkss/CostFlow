@@ -134,6 +134,99 @@ export interface ProformaInvoiceConfig {
   hsnSacCode: string;
   gstRate: number;
   unitMetric: string;
+export type SupportedCurrency = "INR" | "USD" | "AED" | "EUR" | "GBP";
+
+export interface ForexConfig {
+  baseCurrency: SupportedCurrency;
+  targetCurrency: SupportedCurrency;
+  hedgeBufferPct: number; // e.g. 2.0%
+  spotRates: Record<SupportedCurrency, number>; // Relative to USD
+}
+
+export interface CommodityIndex {
+  id: string;
+  name: string;
+  category: "metals" | "plastics" | "energy" | "forex";
+  unit: string;
+  price: number;
+  change24h: number; // Percentage change e.g. +1.4 or -0.8
+  lastUpdated: string;
+}
+
+export interface WhatIfScenarioConfig {
+  rmPriceVolatilityPct: number; // [-30 to +50]
+  scrapShiftPct: number; // [0 to +20]
+  inflationPct: number; // [-10 to +30]
+  volumeDiscountScale: number; // [0.5 to 10]
+}
+
+export interface ScenarioResultMetrics {
+  label: string;
+  directCosts: number;
+  factoryOverheads: number;
+  subtotal: number;
+  sellingPrice: number;
+  profitAmount: number;
+  marginPercent: number;
+  breakevenUnits: number;
+  breakevenUnitPrice: number;
+}
+
+export interface WhatIfComparisonResult {
+  worstCase: ScenarioResultMetrics;
+  expectedCase: ScenarioResultMetrics;
+  bestCase: ScenarioResultMetrics;
+  riskVolatilityIndex: "LOW" | "MODERATE" | "HIGH";
+  riskScore: number; // 0 to 100
+}
+
+export interface ReverseTargetSolverConfig {
+  targetPrice: number;
+  targetMarginPct: number;
+  lockedVariableIds: string[]; // Variable IDs that cannot be changed
+}
+
+export interface ReverseTargetSolverResult {
+  targetPrice: number;
+  targetMarginPct: number;
+  allowableSubtotal: number;
+  allowableDirectMaterialCost: number;
+  maxAllowableRmRate: number; // Max ₹/kg or ₹/m
+  maxAllowableCycleTimeHours: number;
+  feasibilityStatus: "VIABLE" | "TIGHT" | "UNFEASIBLE";
+  recommendations: string[];
+}
+
+export interface CostSheetVersionSnapshot {
+  id: string;
+  versionName: string;
+  versionNumber: string; // e.g. v1.0
+  timestamp: string;
+  authorName: string;
+  authorRole: UserRole;
+  notes: string;
+  blocksSnapshot: CostingBlock[];
+  summarySnapshot: CostingSummary;
+  currencySnapshot: SupportedCurrency;
+}
+
+export interface VersionDiffResult {
+  versionA: CostSheetVersionSnapshot;
+  versionB: CostSheetVersionSnapshot;
+  subtotalDelta: number;
+  subtotalDeltaPct: number;
+  sellingPriceDelta: number;
+  marginDriftPct: number;
+  materialPriceImpact: number;
+  quantityEfficiencyImpact: number;
+  blockDeltas: {
+    blockId: string;
+    label: string;
+    costA: number;
+    costB: number;
+    delta: number;
+    deltaPct: number;
+  }[];
 }
 
 export interface ExportConfig {

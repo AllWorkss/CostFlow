@@ -24,6 +24,10 @@ import { TeamManagementModal } from "@/components/rbac/TeamManagementModal";
 import { AuditTrailModal } from "@/components/rbac/AuditTrailModal";
 import { CompanyOpexModal } from "@/components/opex/CompanyOpexModal";
 import { ProformaInvoiceModal } from "@/components/invoice/ProformaInvoiceModal";
+import { TickerStrip } from "@/components/forex/TickerStrip";
+import { WhatIfSensitivityModal } from "@/components/sensitivity/WhatIfSensitivityModal";
+import { ReverseTargetSolverModal } from "@/components/solver/ReverseTargetSolverModal";
+import { RevisionDiffModal } from "@/components/revision/RevisionDiffModal";
 import { CostBlockCard } from "@/components/dashboard/CostBlockCard";
 import type { Domain } from "@/types/costing";
 
@@ -190,6 +194,9 @@ export function DashboardPageContent() {
   const [showAuditModal, setShowAuditModal] = useState(false);
   const [showOpexModal, setShowOpexModal] = useState(false);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const [showWhatIfModal, setShowWhatIfModal] = useState(false);
+  const [showReverseSolverModal, setShowReverseSolverModal] = useState(false);
+  const [showRevisionDiffModal, setShowRevisionDiffModal] = useState(false);
   const [enginesMenuOpen, setEnginesMenuOpen] = useState(false);
   const [rbacMenuOpen, setRbacMenuOpen] = useState(false);
   const [targetMargin, setTargetMarginState] = useState(0.25);
@@ -549,6 +556,9 @@ export function DashboardPageContent() {
         )}
       </AnimatePresence>
 
+      {/* ══════ LIVE COMMODITY & FOREX TICKER STRIP ══════ */}
+      <TickerStrip />
+
       {/* ══════ NAV ══════ */}
       <nav className="sticky top-0 z-40 glass border-b" style={{ borderColor: "var(--border)" }}>
         <div className="flex items-center gap-2 px-3 sm:px-6 h-14 sm:h-16 max-w-screen-2xl mx-auto">
@@ -620,6 +630,33 @@ export function DashboardPageContent() {
                     className="w-full text-left px-3 py-2 text-xs rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800/80 flex items-center gap-2 text-blue-400 font-medium"
                   >
                     <ArrowRightLeft size={14} /> Unit Geometry Engine
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowWhatIfModal(true);
+                      setEnginesMenuOpen(false);
+                    }}
+                    className="w-full text-left px-3 py-2 text-xs rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800/80 flex items-center gap-2 text-purple-400 font-medium"
+                  >
+                    <Sparkles size={14} /> "What-If" Sensitivity Tester
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowReverseSolverModal(true);
+                      setEnginesMenuOpen(false);
+                    }}
+                    className="w-full text-left px-3 py-2 text-xs rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800/80 flex items-center gap-2 text-cyan-400 font-medium"
+                  >
+                    <BarChart2 size={14} /> Reverse Target Solver
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowRevisionDiffModal(true);
+                      setEnginesMenuOpen(false);
+                    }}
+                    className="w-full text-left px-3 py-2 text-xs rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800/80 flex items-center gap-2 text-indigo-400 font-medium"
+                  >
+                    <Clock size={14} /> Revision & Diff Engine
                   </button>
                   <button
                     onClick={() => {
@@ -1376,6 +1413,24 @@ export function DashboardPageContent() {
       <ProformaInvoiceModal
         isOpen={showInvoiceModal}
         onClose={() => setShowInvoiceModal(false)}
+      />
+
+      {/* "What-If" Sensitivity & Scenario Stress-Tester Modal */}
+      <WhatIfSensitivityModal
+        isOpen={showWhatIfModal}
+        onClose={() => setShowWhatIfModal(false)}
+      />
+
+      {/* Reverse Target Costing & Feasibility Solver Modal */}
+      <ReverseTargetSolverModal
+        isOpen={showReverseSolverModal}
+        onClose={() => setShowReverseSolverModal(false)}
+      />
+
+      {/* Cost Sheet Revision & Immutable Diff Modal */}
+      <RevisionDiffModal
+        isOpen={showRevisionDiffModal}
+        onClose={() => setShowRevisionDiffModal(false)}
       />
     </div>
   );
