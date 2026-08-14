@@ -598,7 +598,100 @@ export async function generateExcelExport(config: ExportConfig): Promise<Buffer>
     });
   }
 
-  // Write to buffer
+  // ─────────────────────────────────────────────
+  // Sheet 8: WHAT-IF SCENARIO STRESS-TESTER
+  // ─────────────────────────────────────────────
+  const whatIfSheet = workbook.addWorksheet("What-If Scenarios", {
+    properties: { tabColor: { argb: "FF9333EA" } },
+    views: [{ state: "frozen", ySplit: 4 }],
+  });
+
+  whatIfSheet.columns = [
+    { key: "A", width: 28 },
+    { key: "B", width: 22 },
+    { key: "C", width: 22 },
+    { key: "D", width: 22 },
+    { key: "E", width: 30 },
+  ];
+
+  whatIfSheet.mergeCells("A1:E1");
+  const hWhatIf = whatIfSheet.getCell("A1");
+  hWhatIf.value = "CostFlow — What-If Sensitivity & Stress-Test Matrix";
+  hWhatIf.font = { bold: true, size: 14, color: { argb: WHITE } };
+  hWhatIf.fill = { type: "pattern", pattern: "solid", fgColor: { argb: NAVY } };
+
+  ["Financial Metric", "Worst Case (Stress)", "Expected Base Case", "Best Case (Optimized)", "Excel Sensitivity Formula"].forEach((h, i) => {
+    const cell = whatIfSheet.getRow(3).getCell(i + 1);
+    cell.value = h;
+    cell.font = { bold: true, color: { argb: WHITE }, size: 10 };
+    cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF7E22CE" } };
+  });
+
+  const subtotalBase = config.summary.subtotal;
+  const sellingBase = config.summary.sellingPrice;
+
+  const scenarioRows = [
+    { metric: "Subtotal Cost", worst: subtotalBase * 1.25, base: subtotalBase, best: subtotalBase * 0.85, formula: "=IF(B4>C4, \"Cost Risk\", \"Normal\")" },
+    { metric: "Final Selling Price", worst: sellingBase * 1.25, base: sellingBase, best: sellingBase * 0.85, formula: "=MAX(B5:D5)" },
+    { metric: "Net Profit Amount", worst: config.summary.profitAmount * 0.5, base: config.summary.profitAmount, best: config.summary.profitAmount * 1.5, formula: "=MIN(B6:D6)" },
+  ];
+
+  scenarioRows.forEach((s, idx) => {
+    const rNum = 4 + idx;
+    const row = whatIfSheet.getRow(rNum);
+    row.getCell(1).value = s.metric;
+    row.getCell(2).value = s.worst;
+    row.getCell(2).numFmt = "#,##0.00";
+    row.getCell(3).value = s.base;
+    row.getCell(3).numFmt = "#,##0.00";
+    row.getCell(4).value = s.best;
+    row.getCell(4).numFmt = "#,##0.00";
+    row.getCell(5).value = { formula: s.formula, result: s.metric };
+  });
+
+  // ─────────────────────────────────────────────
+  // Sheet 9: REVERSE COSTING SOLVER
+  // ─────────────────────────────────────────────
+  const solverSheet = workbook.addWorksheet("Reverse Solver", {
+    properties: { tabColor: { argb: "FF0284C7" } },
+    views: [{ state: "frozen", ySplit: 4 }],
+  });
+
+  solverSheet.columns = [
+    { key: "A", width: 32 },
+    { key: "B", width: 24 },
+    { key: "C", width: 40 },
+  ];
+
+  solverSheet.mergeCells("A1:C1");
+  const hSolver = solverSheet.getCell("A1");
+  hSolver.value = "CostFlow — Reverse Target Costing Goal-Seek Solver";
+  hSolver.font = { bold: true, size: 14, color: { argb: WHITE } };
+  hSolver.fill = { type: "pattern", pattern: "solid", fgColor: { argb: NAVY } };
+
+  ["Parameter Description", "Calculated Budget Value", "Excel Goal-Seek Formula"].forEach((h, i) => {
+    const cell = solverSheet.getRow(3).getCell(i + 1);
+    cell.value = h;
+    cell.font = { bold: true, color: { argb: WHITE }, size: 10 };
+    cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF0369A1" } };
+  });
+
+  solverSheet.getRow(4).getCell(1).value = "Target Selling Price (P_target)";
+  solverSheet.getRow(4).getCell(2).value = 500;
+  solverSheet.getRow(4).getCell(2).numFmt = "#,##0.00";
+
+  solverSheet.getRow(5).getCell(1).value = "Target Margin %";
+  solverSheet.getRow(5).getCell(2).value = 0.25;
+  solverSheet.getRow(5).getCell(2).numFmt = "0.00%";
+
+  solverSheet.getRow(6).getCell(1).value = "Allowable Subtotal Ceiling";
+  solverSheet.getRow(6).getCell(2).value = { formula: "=B4*(1-B5)", result: 375 };
+  solverSheet.getRow(6).getCell(2).numFmt = "#,##0.00";
+  solverSheet.getRow(6).getCell(3).value = "=B4*(1-B5)";
+
+  // ─────────────────────────────────────────────
+  // Write to Buffer
+  // ─────────────────────────────────────────────
   const buffer = await workbook.xlsx.writeBuffer();
   return Buffer.from(buffer);
 }
