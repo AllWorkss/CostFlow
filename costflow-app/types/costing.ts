@@ -69,7 +69,11 @@ export interface DomainPreset {
   unitSystem: "metric" | "imperial";
 }
 
+export type MarginMode = "markup_on_cost" | "margin_on_selling";
+
 export interface CostingSummary {
+  directCosts: number;
+  factoryOverheads: number;
   subtotal: number;
   wastageAmount: number;
   taxAmount: number;
@@ -77,6 +81,11 @@ export interface CostingSummary {
   sellingPrice: number;
   breakEvenUnits: number;
   marginPercent: number;
+  marginMode: MarginMode;
+  batchMultiplier: number;
+  targetPriceSolverEnabled: boolean;
+  targetSellingPrice: number;
+  solvedRawMaterialUnitCost?: number;
   costBreakdown: { label: string; value: number; color: string }[];
 }
 

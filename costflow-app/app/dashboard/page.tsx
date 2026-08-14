@@ -142,10 +142,13 @@ export function DashboardPageContent() {
       liquidBatchMetrics: state.liquidBatchMetrics,
       currentUser: state.currentUser,
       approvalStatus: state.approvalStatus,
-      auditLogs: state.auditLogs,
-      opexConfig: state.opexConfig,
-      payrollConfig: state.payrollConfig,
-      companyMetrics: state.companyMetrics,
+      marginMode: state.marginMode,
+      batchMultiplier: state.batchMultiplier,
+      targetPriceSolverEnabled: state.targetPriceSolverEnabled,
+      targetSellingPrice: state.targetSellingPrice,
+      setMarginMode: state.setMarginMode,
+      setBatchMultiplier: state.setBatchMultiplier,
+      setTargetPriceSolver: state.setTargetPriceSolver,
       setDomain: state.setDomain,
       setProjectName: state.setProjectName,
       setCompanyName: state.setCompanyName,
@@ -174,7 +177,10 @@ export function DashboardPageContent() {
   const [showTeamModal, setShowTeamModal] = useState(false);
   const [showAuditModal, setShowAuditModal] = useState(false);
   const [showOpexModal, setShowOpexModal] = useState(false);
-  const [targetMargin, setTargetMargin] = useState(0.25);
+  const [enginesMenuOpen, setEnginesMenuOpen] = useState(false);
+  const [rbacMenuOpen, setRbacMenuOpen] = useState(false);
+  const [targetMargin, setTargetMarginState] = useState(0.25);
+  const [solverPriceInput, setSolverPriceInput] = useState<string>("500");
   const [addingBlock, setAddingBlock] = useState(false);
   const [newBlockLabel, setNewBlockLabel] = useState("");
   const [toast, setToast] = useState<string | null>(null);
@@ -560,42 +566,87 @@ export function DashboardPageContent() {
             />
           </div>
 
-          {/* Right controls */}
+          {/* Right controls — Consolidated Dropdowns */}
           <div className="hidden sm:flex items-center gap-2 flex-shrink-0">
-            <button
-              onClick={() => setShowOpexModal(true)}
-              className="btn btn-ghost py-1.5 text-xs text-indigo-400 border border-indigo-500/30 bg-indigo-500/10 hover:bg-indigo-500/20"
-            >
-              <Building2 size={14} /> Company OPEX & Modeler
-            </button>
-            <button
-              onClick={() => setShowTeamModal(true)}
-              className="btn btn-ghost py-1.5 text-xs text-purple-400 border border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20"
-            >
-              <Shield size={14} /> {currentUser.role.replace("_", " ").toUpperCase()}
-            </button>
-            <button
-              onClick={() => setShowAuditModal(true)}
-              className="btn btn-ghost py-1.5 text-xs text-amber-400 border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20"
-            >
-              <Activity size={14} /> Audit Log
-            </button>
-            <span className="px-2 py-1 text-xs font-bold rounded-lg border border-slate-700 bg-slate-800 text-slate-300 capitalize">
-              <Lock size={12} className="inline mr-1 text-amber-400" />{" "}
-              {approvalStatus.replace("_", " ")}
-            </span>
-            <button
-              onClick={() => setShowLiquidModal(true)}
-              className="btn btn-ghost py-1.5 text-xs text-cyan-400 border border-cyan-500/30 bg-cyan-500/10 hover:bg-cyan-500/20"
-            >
-              <Droplets size={14} /> Liquid Batch Engine
-            </button>
-            <button
-              onClick={() => setShowGeometryModal(true)}
-              className="btn btn-ghost py-1.5 text-xs text-blue-400 border border-blue-500/30 bg-blue-500/10 hover:bg-blue-500/20"
-            >
-              <ArrowRightLeft size={14} /> Geometry Engine
-            </button>
+            {/* Specialized Engines Dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => {
+                  setEnginesMenuOpen(!enginesMenuOpen);
+                  setRbacMenuOpen(false);
+                }}
+                className="btn btn-ghost py-1.5 text-xs text-blue-400 border border-blue-500/30 bg-blue-500/10 hover:bg-blue-500/20 flex items-center gap-1.5"
+              >
+                <Sparkles size={14} /> Specialized Engines <ChevronDown size={12} />
+              </button>
+              {enginesMenuOpen && (
+                <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl shadow-2xl z-50 p-1.5 space-y-1">
+                  <button
+                    onClick={() => {
+                      setShowOpexModal(true);
+                      setEnginesMenuOpen(false);
+                    }}
+                    className="w-full text-left px-3 py-2 text-xs rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800/80 flex items-center gap-2 text-indigo-400 font-medium"
+                  >
+                    <Building2 size={14} /> Company OPEX & Overhead
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowLiquidModal(true);
+                      setEnginesMenuOpen(false);
+                    }}
+                    className="w-full text-left px-3 py-2 text-xs rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800/80 flex items-center gap-2 text-cyan-400 font-medium"
+                  >
+                    <Droplets size={14} /> Liquid Batching Engine
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowGeometryModal(true);
+                      setEnginesMenuOpen(false);
+                    }}
+                    className="w-full text-left px-3 py-2 text-xs rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800/80 flex items-center gap-2 text-blue-400 font-medium"
+                  >
+                    <ArrowRightLeft size={14} /> Unit Geometry Engine
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Governance & RBAC Dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => {
+                  setRbacMenuOpen(!rbacMenuOpen);
+                  setEnginesMenuOpen(false);
+                }}
+                className="btn btn-ghost py-1.5 text-xs text-purple-400 border border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 flex items-center gap-1.5"
+              >
+                <Shield size={14} /> {currentUser.role.replace("_", " ").toUpperCase()}{" "}
+                <ChevronDown size={12} />
+              </button>
+              {rbacMenuOpen && (
+                <div className="absolute right-0 mt-2 w-52 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl shadow-2xl z-50 p-1.5 space-y-1">
+                  <button
+                    onClick={() => {
+                      setShowTeamModal(true);
+                      setRbacMenuOpen(false);
+                    }}
+                    className="w-full text-left px-3 py-2 text-xs rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800/80 flex items-center gap-2 text-purple-400 font-medium"
+                  >
+                    <Shield size={14} /> Roles & Permissions
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowAuditModal(true);
+                      setRbacMenuOpen(false);
+                    }}
+                    className="w-full text-left px-3 py-2 text-xs rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800/80 flex items-center gap-2 text-amber-400 font-medium"
+                  >
+                    <Activity size={14} /> Session Audit Log
+                  </button>
+                </div>
+              )}
+            </div>
             <select
               value={domain}
               onChange={(e) => {
@@ -747,8 +798,125 @@ export function DashboardPageContent() {
       {/* ══════ MAIN CONTENT ══════ */}
       <div className="max-w-screen-2xl mx-auto px-3 sm:px-6 py-4 sm:py-6 overflow-x-hidden">
         <div className="flex flex-col xl:flex-row gap-5">
-          {/* ════ LEFT: BLOCKS PANEL ════ */}
-          <div className={`xl:flex-1 ${mobileTab === "summary" ? "hidden sm:block" : "block"}`}>
+            {/* Quick-Start Industry Presets Bar */}
+            <div className="card p-3 mb-4 flex items-center justify-between gap-2 overflow-x-auto">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5 flex-shrink-0">
+                <Sparkles size={14} className="text-amber-400" /> Presets:
+              </span>
+              <div className="flex items-center gap-2 flex-nowrap">
+                {DOMAIN_PRESETS.map((p) => (
+                  <button
+                    key={p.id}
+                    onClick={() => {
+                      startTransition(() => {
+                        setDomain(p.id);
+                      });
+                      notify(`Loaded ${p.label.split("—")[0].trim()} preset`);
+                    }}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 border transition-all flex-shrink-0 ${
+                      domain === p.id
+                        ? "bg-blue-600 text-white border-blue-500 shadow-md"
+                        : "bg-slate-100 dark:bg-zinc-800/80 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-zinc-700 hover:border-blue-500/50"
+                    }`}
+                  >
+                    <span>{p.label.split("—")[0].trim()}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Formula Engine Control Toolbar */}
+            <div className="card p-3 sm:p-4 mb-4 grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-900/40 border-slate-800">
+              {/* Batch Multiplier */}
+              <div>
+                <label className="text-xs font-bold text-slate-300 mb-1 flex items-center gap-1">
+                  📦 Batch Quantity Scaling
+                </label>
+                <div className="flex items-center gap-1.5">
+                  <input
+                    type="number"
+                    min={1}
+                    value={batchMultiplier}
+                    onChange={(e) => setBatchMultiplier(parseFloat(e.target.value) || 1)}
+                    className="cf-input py-1 text-xs font-mono font-bold text-blue-400 w-20 text-center"
+                  />
+                  <div className="flex gap-1">
+                    {[1, 10, 100].map((m) => (
+                      <button
+                        key={m}
+                        onClick={() => setBatchMultiplier(m)}
+                        className={`px-2 py-1 text-[11px] font-bold rounded-md border ${
+                          batchMultiplier === m
+                            ? "bg-blue-600 text-white border-blue-500"
+                            : "bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700"
+                        }`}
+                      >
+                        {m}x
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Margin Calculation Mode */}
+              <div>
+                <label className="text-xs font-bold text-slate-300 mb-1 flex items-center gap-1">
+                  📈 Margin Calculation Mode
+                </label>
+                <button
+                  onClick={() =>
+                    setMarginMode(
+                      marginMode === "markup_on_cost" ? "margin_on_selling" : "markup_on_cost"
+                    )
+                  }
+                  className="w-full py-1.5 px-3 rounded-lg text-xs font-bold border border-slate-700 bg-slate-800 text-cyan-300 hover:bg-slate-700 transition-colors text-left flex items-center justify-between"
+                >
+                  <span>
+                    {marginMode === "margin_on_selling"
+                      ? "Margin on Selling %"
+                      : "Markup on Cost %"}
+                  </span>
+                  <span className="text-[10px] uppercase tracking-wider text-slate-400">Toggle</span>
+                </button>
+              </div>
+
+              {/* Reverse Target Price Solver */}
+              <div>
+                <label className="text-xs font-bold text-slate-300 mb-1 flex items-center gap-1">
+                  🎯 Target Price Solver
+                </label>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() =>
+                      setTargetPriceSolver(
+                        !targetPriceSolverEnabled,
+                        parseFloat(solverPriceInput) || 500
+                      )
+                    }
+                    className={`px-2.5 py-1 text-xs font-bold rounded-lg border transition-colors ${
+                      targetPriceSolverEnabled
+                        ? "bg-purple-600 text-white border-purple-500"
+                        : "bg-slate-800 text-slate-400 border-slate-700"
+                    }`}
+                  >
+                    {targetPriceSolverEnabled ? "ON" : "OFF"}
+                  </button>
+                  {targetPriceSolverEnabled && (
+                    <input
+                      type="number"
+                      value={solverPriceInput}
+                      onChange={(e) => {
+                        setSolverPriceInput(e.target.value);
+                        setTargetPriceSolver(true, parseFloat(e.target.value) || 0);
+                      }}
+                      placeholder="Target ₹"
+                      className="cf-input py-1 text-xs font-mono font-bold text-purple-300 flex-1"
+                    />
+                  )}
+                </div>
+              </div>
+            </div>
+
             <div className="flex items-center justify-between mb-3">
               <h2
                 className="font-bold flex items-center gap-2"
@@ -757,24 +925,6 @@ export function DashboardPageContent() {
                 Costing Blocks
               </h2>
               <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setShowOpexModal(true)}
-                  className="btn btn-ghost py-1.5 text-xs text-indigo-400 border border-indigo-500/30 bg-indigo-500/10 hover:bg-indigo-500/20"
-                >
-                  <Building2 size={14} /> Company OPEX & Modeler
-                </button>
-                <button
-                  onClick={() => setShowLiquidModal(true)}
-                  className="btn btn-ghost py-1.5 text-xs text-cyan-400 border border-cyan-500/30 bg-cyan-500/10 hover:bg-cyan-500/20"
-                >
-                  <Droplets size={14} /> Liquid Batch Engine
-                </button>
-                <button
-                  onClick={() => setShowGeometryModal(true)}
-                  className="btn btn-ghost py-1.5 text-xs text-blue-400 border border-blue-500/30 bg-blue-500/10 hover:bg-blue-500/20"
-                >
-                  <ArrowRightLeft size={14} /> Geometry Engine
-                </button>
                 <Link
                   href="/flow"
                   aria-label="View Flow"
@@ -875,14 +1025,22 @@ export function DashboardPageContent() {
           >
             {/* Cost Summary Card */}
             <div className="metric-card">
-              <h3 className="font-bold mb-3 flex items-center gap-2" style={{ color: "var(--text-1)" }}>
-                <TrendingUp size={17} color="var(--cf-blue)" /> Cost Summary
+              <h3 className="font-bold mb-3 flex items-center justify-between" style={{ color: "var(--text-1)" }}>
+                <span className="flex items-center gap-2">
+                  <TrendingUp size={17} color="var(--cf-blue)" /> Cost Summary
+                </span>
+                {batchMultiplier > 1 && (
+                  <span className="badge badge-blue text-[10px] font-bold">
+                    {batchMultiplier}x Batch
+                  </span>
+                )}
               </h3>
               {summary ? (
                 <>
                   {[
-                    { label: "Subtotal", value: summary.subtotal, color: "var(--cf-blue)" },
-                    { label: "Wastage", value: summary.wastageAmount, color: "var(--cf-amber)" },
+                    { label: "Direct Costs", value: summary.directCosts, color: "var(--cf-blue)" },
+                    { label: "Factory Overheads", value: summary.factoryOverheads, color: "var(--cf-purple)" },
+                    { label: "Subtotal", value: summary.subtotal, color: "var(--text-1)" },
                     { label: "Tax / GST", value: summary.taxAmount, color: "var(--cf-red)" },
                     { label: "Profit", value: summary.profitAmount, color: "var(--cf-emerald)" },
                   ].map((row) => (
@@ -903,6 +1061,22 @@ export function DashboardPageContent() {
                     </div>
                   ))}
                   <SellingPriceCard value={summary.sellingPrice} currency={currency} />
+
+                  {/* Reverse Target Price Solver Result Card */}
+                  {summary.targetPriceSolverEnabled && (
+                    <div className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/30 text-purple-300 text-xs my-3">
+                      <div className="font-bold flex items-center justify-between mb-1">
+                        <span>🎯 Reverse Target Price</span>
+                        <span className="font-mono text-purple-200">{fmt(summary.targetSellingPrice, currency)}</span>
+                      </div>
+                      <div className="text-[11px] text-slate-300 flex justify-between items-center mt-1">
+                        <span>Allowable Raw Material Unit Cost:</span>
+                        <strong className="text-emerald-400 font-mono text-xs">
+                          {fmt(summary.solvedRawMaterialUnitCost ?? 0, currency)}
+                        </strong>
+                      </div>
+                    </div>
+                  )}
                 </>
               ) : (
                 <div className="py-8 text-center text-xs" style={{ color: "var(--text-3)" }}>

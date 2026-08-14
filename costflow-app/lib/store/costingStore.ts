@@ -54,12 +54,20 @@ interface CostingStore {
   payrollConfig: PayrollConfig | null;
   companyMetrics: CompanyFinancialMetrics | null;
 
+  marginMode: MarginMode;
+  batchMultiplier: number;
+  targetPriceSolverEnabled: boolean;
+  targetSellingPrice: number;
+
   // Actions
   setDomain: (domain: Domain) => void;
   setProjectName: (name: string) => void;
   setCompanyName: (name: string) => void;
   setCurrency: (currency: "INR" | "USD") => void;
   setTargetMargin: (pct: number) => void;
+  setMarginMode: (mode: MarginMode) => void;
+  setBatchMultiplier: (mult: number) => void;
+  setTargetPriceSolver: (enabled: boolean, targetSellingPrice?: number) => void;
   updateBlockVariable: (blockId: string, variableId: string, value: number) => void;
   toggleBlock: (blockId: string) => void;
   reorderBlocks: (blocks: CostingBlock[]) => void;
@@ -105,6 +113,10 @@ export const useCostingStore = create<CostingStore>()(
       opexConfig: DEFAULT_OPEX_CONFIG,
       payrollConfig: DEFAULT_PAYROLL_CONFIG,
       companyMetrics: calculateCompanyFinancials(DEFAULT_OPEX_CONFIG, DEFAULT_PAYROLL_CONFIG, 150000, 0, 0.25),
+      marginMode: "markup_on_cost",
+      batchMultiplier: 1,
+      targetPriceSolverEnabled: false,
+      targetSellingPrice: 0,
 
       setDomain: (domain) => {
         const blocks = loadPresetBlocks(domain);
@@ -117,6 +129,23 @@ export const useCostingStore = create<CostingStore>()(
       setCurrency: (currency) => set({ currency, isDirty: true }),
       setTargetMargin: (pct) => {
         set({ targetMarginPct: pct, isDirty: true });
+        get().recompute();
+      },
+      setMarginMode: (mode) => {
+        set({ marginMode: mode, isDirty: true });
+        get().recompute();
+      },
+      setBatchMultiplier: (mult) => {
+        const batchMultiplier = Math.max(1, Math.round(mult));
+        set({ batchMultiplier, isDirty: true });
+        get().recompute();
+      },
+      setTargetPriceSolver: (enabled, price) => {
+        set((state) => ({
+          targetPriceSolverEnabled: enabled,
+          targetSellingPrice: price !== undefined ? price : state.targetSellingPrice,
+          isDirty: true,
+        }));
         get().recompute();
       },
 
@@ -394,11 +423,25 @@ export const useCostingStore = create<CostingStore>()(
       },
 
       recompute: () => {
-        const { blocks, targetMarginPct } = get();
+        const {
+          blocks,
+          targetMarginPct,
+          marginMode,
+          batchMultiplier,
+          targetPriceSolverEnabled,
+          targetSellingPrice,
+        } = get();
         const computed = computeAllBlocks(blocks);
         const anomalies = detectAnomalies(computed);
         const markedBlocks = markBlockAnomalies(computed, anomalies);
-        const summary = calculateSummary(computed, targetMarginPct);
+        const summary = calculateSummary(
+          markedBlocks,
+          targetMarginPct,
+          marginMode,
+          batchMultiplier,
+          targetPriceSolverEnabled,
+          targetSellingPrice
+        );
         set({ blocks: markedBlocks, summary });
       },
 
