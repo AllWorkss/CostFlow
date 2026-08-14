@@ -63,14 +63,16 @@ export const CostBlockCard = memo(function CostBlockCard({
 }: CostBlockCardProps) {
   const IconComp = ICON_MAP[block.icon] || Plus;
 
+  const vars = block?.variables || [];
+
   // Local variable state for 150ms debounced smooth typing
   const [localValues, setLocalValues] = useState<Record<string, number>>(() =>
-    Object.fromEntries(block.variables.map((v) => [v.id, v.value]))
+    Object.fromEntries(vars.map((v) => [v.id, v.value]))
   );
 
   useEffect(() => {
-    setLocalValues(Object.fromEntries(block.variables.map((v) => [v.id, v.value])));
-  }, [block.variables]);
+    setLocalValues(Object.fromEntries(vars.map((v) => [v.id, v.value])));
+  }, [vars]);
 
   const handleInputChange = useCallback(
     (varId: string, valStr: string) => {
@@ -188,7 +190,7 @@ export const CostBlockCard = memo(function CostBlockCard({
 
             {/* Variables grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {block.variables.map((variable) => {
+              {vars.map((variable) => {
                 const permState = getVariablePermissionState(
                   userRole,
                   block.type,
