@@ -134,6 +134,8 @@ export interface ProformaInvoiceConfig {
   hsnSacCode: string;
   gstRate: number;
   unitMetric: string;
+}
+
 export type SupportedCurrency = "INR" | "USD" | "AED" | "EUR" | "GBP";
 
 export interface ForexConfig {
