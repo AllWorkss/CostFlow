@@ -1,7 +1,7 @@
 // ============================================================
 // CostFlow — Dynamic Formula Engine
 // ============================================================
-import type { CostingBlock, CostingVariable } from "@/types/costing";
+import type { CostingBlock, CostingVariable, MarginMode } from "@/types/costing";
 
 /**
  * Safely evaluate a mathematical formula string with named variables.
