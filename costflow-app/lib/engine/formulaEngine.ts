@@ -10,10 +10,8 @@ import type { CostingBlock, CostingVariable, CostingSummary, MarginMode } from "
  */
 export function evaluateFormula(formula: string, vars: Record<string, number>): number {
   try {
-    // Build a safe expression evaluator using Function
     const varNames = Object.keys(vars);
     const varValues = Object.values(vars);
-    // Only allow safe math characters
     const sanitized = formula.replace(/[^0-9a-zA-Z_+\-*/().%, ]/g, "");
     // eslint-disable-next-line no-new-func
     const fn = new Function(...varNames, `"use strict"; return (${sanitized});`);
@@ -25,14 +23,15 @@ export function evaluateFormula(formula: string, vars: Record<string, number>): 
 }
 
 /**
- * Build a variable map from a block's variables array
+ * Build a variable map from a block's variables array safely
  */
-export function buildVarMap(variables: CostingVariable[]): Record<string, number> {
-  return Object.fromEntries(variables.map((v) => [v.id, v.value]));
+export function buildVarMap(variables?: CostingVariable[]): Record<string, number> {
+  const vars = variables ?? [];
+  return Object.fromEntries(vars.map((v) => [v.id, v.value]));
 }
 
 /**
- * Compute a single block's result
+ * Compute a single block's result safely
  */
 export function computeBlock(block: CostingBlock, extraVars?: Record<string, number>): number {
   const vars = { ...buildVarMap(block.variables), ...(extraVars ?? {}) };
@@ -71,7 +70,8 @@ export function computeAllBlocks(blocks: CostingBlock[]): CostingBlock[] {
  */
 export function describeFormula(formula: string, vars: CostingVariable[]): string {
   let description = formula;
-  for (const v of vars) {
+  const safeVars = vars ?? [];
+  for (const v of safeVars) {
     description = description.replace(
       new RegExp(`\\b${v.id}\\b`, "g"),
       `[${v.name}=${v.value}${v.unit ? " " + v.unit : ""}]`
@@ -104,10 +104,11 @@ export function calculateSummary(
 
   for (const block of computed) {
     const r = block.result ?? 0;
+    const blockVars = block.variables ?? [];
     switch (block.type) {
       case "raw_material": {
         materialCost += r;
-        const qtyVar = block.variables.find((v) => v.id === "qty" || v.id === "amount");
+        const qtyVar = blockVars.find((v) => v.id === "qty" || v.id === "amount");
         if (qtyVar && qtyVar.value > 0) rawMaterialQty = qtyVar.value;
         break;
       }
@@ -126,7 +127,7 @@ export function calculateSummary(
         wastageAmount += r;
         break;
       case "tax_gst": {
-        const gstVar = block.variables.find((v) => v.id === "gstRate");
+        const gstVar = blockVars.find((v) => v.id === "gstRate");
         if (gstVar) taxRate = gstVar.value;
         taxAmount += r;
         break;
