@@ -25,8 +25,6 @@ import {
 import { useCostingStore } from "@/lib/store/costingStore";
 import type { ProformaInvoiceConfig } from "@/types/costing";
 import { numberToWords } from "@/lib/utils/numberToWords";
-import html2canvas from "html2canvas";
-import jsPDF from "jspdf";
 
 interface ProformaInvoiceModalProps {
   isOpen: boolean;
@@ -127,6 +125,9 @@ export function ProformaInvoiceModal({ isOpen, onClose }: ProformaInvoiceModalPr
     if (!previewRef.current) return;
     try {
       setIsGeneratingPdf(true);
+      const html2canvas = (await import("html2canvas")).default;
+      const { jsPDF } = await import("jspdf");
+
       const canvas = await html2canvas(previewRef.current, {
         scale: 2,
         useCORS: true,
