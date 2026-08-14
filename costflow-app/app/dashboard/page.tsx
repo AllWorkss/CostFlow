@@ -6,7 +6,7 @@ import {
   TrendingUp, Download, RefreshCw, Plus, AlertTriangle,
   ChevronDown, ChevronUp, Trash2, Eye, EyeOff, Sparkles,
   BarChart2, ArrowLeft, Sun, Moon, Factory, GraduationCap,
-  ShoppingCart, Globe, HardHat, X, type LucideProps,
+  ShoppingCart, Globe, HardHat, X, ArrowRightLeft, Droplets, Shield, Activity, Lock, UserCheck, Building2, type LucideProps,
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -16,6 +16,12 @@ import {
 import { useCostingStore } from "@/lib/store/costingStore";
 import { DOMAIN_PRESETS } from "@/lib/engine/domainPresets";
 import { detectAnomalies, computePriceRecommendation } from "@/lib/ml/anomalyDetector";
+import { UnitGeometryModal } from "@/components/geometry/UnitGeometryModal";
+import { LiquidBatchModal } from "@/components/liquid/LiquidBatchModal";
+import { TeamManagementModal } from "@/components/rbac/TeamManagementModal";
+import { AuditTrailModal } from "@/components/rbac/AuditTrailModal";
+import { CompanyOpexModal } from "@/components/opex/CompanyOpexModal";
+import { getVariablePermissionState } from "@/lib/auth/rbacEngine";
 import type { Domain } from "@/types/costing";
 
 /* ─── Icon maps ─── */
@@ -74,6 +80,11 @@ export default function DashboardPage() {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
   const [showAI, setShowAI]     = useState(false);
+  const [showGeometryModal, setShowGeometryModal] = useState(false);
+  const [showLiquidModal, setShowLiquidModal]     = useState(false);
+  const [showTeamModal, setShowTeamModal]         = useState(false);
+  const [showAuditModal, setShowAuditModal]       = useState(false);
+  const [showOpexModal, setShowOpexModal]         = useState(false);
   const [targetMargin, setTargetMargin] = useState(0.25);
   const [addingBlock, setAddingBlock] = useState(false);
   const [newBlockLabel, setNewBlockLabel] = useState("");
@@ -110,6 +121,14 @@ export default function DashboardPage() {
         projectName: store.projectName,
         companyName: store.companyName,
         exportedAt: new Date().toISOString(),
+        geometryConfig: store.geometryConfig,
+        geometryMetrics: store.geometryMetrics,
+        liquidBatchConfig: store.liquidBatchConfig,
+        liquidBatchMetrics: store.liquidBatchMetrics,
+        userRole: store.currentUser.role,
+        opexConfig: store.opexConfig,
+        payrollConfig: store.payrollConfig,
+        companyMetrics: store.companyMetrics,
       };
       const res = await fetch("/api/export", {
         method: "POST",
@@ -124,7 +143,7 @@ export default function DashboardPage() {
       a.download = `CostFlow_${store.projectName.replace(/\s+/g,"_")}.xlsx`;
       a.click();
       URL.revokeObjectURL(url);
-      notify("✅ Excel exported with real formulas!");
+      notify("✅ Excel exported with real formulas & liquid batch sheet!");
     } catch {
       notify("❌ Export failed — please try again.");
     }
@@ -194,6 +213,39 @@ export default function DashboardPage() {
 
           {/* Right controls — hidden on mobile, shown via bottom nav */}
           <div className="hidden sm:flex items-center gap-2 flex-shrink-0">
+            <button
+              onClick={() => setShowOpexModal(true)}
+              className="btn btn-ghost py-1.5 text-xs text-indigo-400 border border-indigo-500/30 bg-indigo-500/10 hover:bg-indigo-500/20"
+            >
+              <Building2 size={14} /> Company OPEX & Modeler
+            </button>
+            <button
+              onClick={() => setShowTeamModal(true)}
+              className="btn btn-ghost py-1.5 text-xs text-purple-400 border border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20"
+            >
+              <Shield size={14} /> {store.currentUser.role.replace("_", " ").toUpperCase()}
+            </button>
+            <button
+              onClick={() => setShowAuditModal(true)}
+              className="btn btn-ghost py-1.5 text-xs text-amber-400 border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20"
+            >
+              <Activity size={14} /> Audit Log
+            </button>
+            <span className="px-2 py-1 text-xs font-bold rounded-lg border border-slate-700 bg-slate-800 text-slate-300 capitalize">
+              <Lock size={12} className="inline mr-1 text-amber-400" /> {store.approvalStatus.replace("_", " ")}
+            </span>
+            <button
+              onClick={() => setShowLiquidModal(true)}
+              className="btn btn-ghost py-1.5 text-xs text-cyan-400 border border-cyan-500/30 bg-cyan-500/10 hover:bg-cyan-500/20"
+            >
+              <Droplets size={14} /> Liquid Batch Engine
+            </button>
+            <button
+              onClick={() => setShowGeometryModal(true)}
+              className="btn btn-ghost py-1.5 text-xs text-blue-400 border border-blue-500/30 bg-blue-500/10 hover:bg-blue-500/20"
+            >
+              <ArrowRightLeft size={14} /> Geometry Engine
+            </button>
             <select value={store.domain} onChange={e => store.setDomain(e.target.value as Domain)}
               className="cf-input py-1.5 text-sm" style={{ width:170 }}>
               {DOMAIN_PRESETS.map(p => <option key={p.id} value={p.id}>{p.label.split("—")[0].trim()}</option>)}
@@ -216,6 +268,12 @@ export default function DashboardPage() {
 
           {/* Mobile: theme toggle only */}
           <div className="flex sm:hidden items-center gap-2">
+            <button onClick={() => setShowLiquidModal(true)} className="btn btn-icon text-cyan-400">
+              <Droplets size={15}/>
+            </button>
+            <button onClick={() => setShowGeometryModal(true)} className="btn btn-icon text-blue-400">
+              <ArrowRightLeft size={15}/>
+            </button>
             <button onClick={() => setTheme(isDark ? "light" : "dark")} className="btn btn-icon">
               {isDark ? <Sun size={15}/> : <Moon size={15}/>}
             </button>
@@ -278,10 +336,28 @@ export default function DashboardPage() {
           <div className={`xl:flex-1 ${mobileTab === "summary" ? "hidden sm:block" : "block"}`}>
 
             <div className="flex items-center justify-between mb-3">
-              <h2 className="font-bold" style={{ fontSize:"clamp(1rem,2.5vw,1.15rem)", color:"var(--text-1)" }}>
+              <h2 className="font-bold flex items-center gap-2" style={{ fontSize:"clamp(1rem,2.5vw,1.15rem)", color:"var(--text-1)" }}>
                 Costing Blocks
               </h2>
               <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowOpexModal(true)}
+                  className="btn btn-ghost py-1.5 text-xs text-indigo-400 border border-indigo-500/30 bg-indigo-500/10 hover:bg-indigo-500/20"
+                >
+                  <Building2 size={14} /> Company OPEX & Modeler
+                </button>
+                <button
+                  onClick={() => setShowLiquidModal(true)}
+                  className="btn btn-ghost py-1.5 text-xs text-cyan-400 border border-cyan-500/30 bg-cyan-500/10 hover:bg-cyan-500/20"
+                >
+                  <Droplets size={14} /> Liquid Batch Engine
+                </button>
+                <button
+                  onClick={() => setShowGeometryModal(true)}
+                  className="btn btn-ghost py-1.5 text-xs text-blue-400 border border-blue-500/30 bg-blue-500/10 hover:bg-blue-500/20"
+                >
+                  <ArrowRightLeft size={14} /> Geometry Engine
+                </button>
                 <Link href="/flow" className="hidden sm:flex btn btn-ghost py-1.5 text-xs">
                   <BarChart2 size={14}/> Flow
                 </Link>
@@ -398,23 +474,34 @@ export default function DashboardPage() {
 
                         {/* Variables grid */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                          {block.variables.map(variable => (
-                            <div key={variable.id}>
-                              <label className="text-xs font-medium block mb-1.5" style={{ color:"var(--text-2)" }}>
-                                {variable.name}
-                                {variable.unit && <span className="badge badge-blue ml-1.5">{variable.unit}</span>}
-                              </label>
-                              <input type="number" value={variable.value}
-                                onChange={e => store.updateBlockVariable(block.id, variable.id, parseFloat(e.target.value) || 0)}
-                                className="cf-input" min={0}
-                                step={variable.unit?.includes("%") ? 0.01 : undefined} />
-                              {variable.description && (
-                                <div className="text-xs mt-1" style={{ color:"var(--text-3)" }}>
-                                  {variable.description}
-                                </div>
-                              )}
-                            </div>
-                          ))}
+                          {block.variables.map(variable => {
+                            const permState = getVariablePermissionState(store.currentUser.role, block.type, variable.id, store.approvalStatus);
+                            const isMasked = permState === "hidden_masked";
+                            const isReadOnly = permState === "readonly";
+
+                            return (
+                              <div key={variable.id}>
+                                <label className="text-xs font-medium block mb-1.5 flex items-center justify-between" style={{ color:"var(--text-2)" }}>
+                                  <span>{variable.name} {variable.unit && <span className="badge badge-blue ml-1.5">{variable.unit}</span>}</span>
+                                  {isMasked && <span className="text-[10px] text-rose-400 font-bold">🔒 Masked</span>}
+                                  {isReadOnly && !isMasked && <span className="text-[10px] text-slate-400">🔒 Read-Only</span>}
+                                </label>
+                                {isMasked ? (
+                                  <input type="text" disabled value="***" className="cf-input bg-slate-900 border-slate-800 text-rose-400 font-mono font-bold" />
+                                ) : (
+                                  <input type="number" disabled={isReadOnly} value={variable.value}
+                                    onChange={e => store.updateBlockVariable(block.id, variable.id, parseFloat(e.target.value) || 0)}
+                                    className={`cf-input ${isReadOnly ? "opacity-60 cursor-not-allowed" : ""}`} min={0}
+                                    step={variable.unit?.includes("%") ? 0.01 : undefined} />
+                                )}
+                                {variable.description && (
+                                  <div className="text-xs mt-1" style={{ color:"var(--text-3)" }}>
+                                    {variable.description}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
                         </div>
                       </motion.div>
                     )}
@@ -596,6 +683,39 @@ export default function DashboardPage() {
           <Download size={20}/><span>{exporting ? "…" : "Export"}</span>
         </button>
       </div>
+
+      {/* ══════ UNIT & GEOMETRY MODAL ══════ */}
+      <UnitGeometryModal
+        isOpen={showGeometryModal}
+        onClose={() => setShowGeometryModal(false)}
+        onApplySuccess={() => notify("✅ Applied Unit & Geometry costs to Costing Sheet!")}
+      />
+
+      {/* ══════ LIQUID BATCH ENGINE MODAL ══════ */}
+      <LiquidBatchModal
+        isOpen={showLiquidModal}
+        onClose={() => setShowLiquidModal(false)}
+        onApplySuccess={() => notify("✅ Applied Liquid Batch costs to Costing Sheet!")}
+      />
+
+      {/* ══════ TEAM MANAGEMENT & RBAC MATRIX MODAL ══════ */}
+      <TeamManagementModal
+        isOpen={showTeamModal}
+        onClose={() => setShowTeamModal(false)}
+      />
+
+      {/* ══════ IMMUTABLE AUDIT TRAIL MODAL ══════ */}
+      <AuditTrailModal
+        isOpen={showAuditModal}
+        onClose={() => setShowAuditModal(false)}
+      />
+
+      {/* ══════ COMPANY OPEX & FINANCIAL MODELER MODAL ══════ */}
+      <CompanyOpexModal
+        isOpen={showOpexModal}
+        onClose={() => setShowOpexModal(false)}
+        onApplySuccess={() => notify("✅ Applied Company OPEX & Payroll to Costing Sheet!")}
+      />
     </div>
   );
 }
