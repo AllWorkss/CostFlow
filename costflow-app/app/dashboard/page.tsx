@@ -23,6 +23,7 @@ import { LiquidBatchModal } from "@/components/liquid/LiquidBatchModal";
 import { TeamManagementModal } from "@/components/rbac/TeamManagementModal";
 import { AuditTrailModal } from "@/components/rbac/AuditTrailModal";
 import { CompanyOpexModal } from "@/components/opex/CompanyOpexModal";
+import { ProformaInvoiceModal } from "@/components/invoice/ProformaInvoiceModal";
 import { CostBlockCard } from "@/components/dashboard/CostBlockCard";
 import type { Domain } from "@/types/costing";
 
@@ -188,6 +189,7 @@ export function DashboardPageContent() {
   const [showTeamModal, setShowTeamModal] = useState(false);
   const [showAuditModal, setShowAuditModal] = useState(false);
   const [showOpexModal, setShowOpexModal] = useState(false);
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [enginesMenuOpen, setEnginesMenuOpen] = useState(false);
   const [rbacMenuOpen, setRbacMenuOpen] = useState(false);
   const [targetMargin, setTargetMarginState] = useState(0.25);
@@ -619,6 +621,15 @@ export function DashboardPageContent() {
                   >
                     <ArrowRightLeft size={14} /> Unit Geometry Engine
                   </button>
+                  <button
+                    onClick={() => {
+                      setShowInvoiceModal(true);
+                      setEnginesMenuOpen(false);
+                    }}
+                    className="w-full text-left px-3 py-2 text-xs rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800/80 flex items-center gap-2 text-emerald-400 font-medium border-t border-slate-800 pt-2"
+                  >
+                    <FileText size={14} /> Proforma Invoice & PDF Quote
+                  </button>
                 </div>
               )}
             </div>
@@ -722,6 +733,13 @@ export function DashboardPageContent() {
               className="btn btn-icon"
             >
               <RefreshCw size={15} />
+            </button>
+            <button
+              aria-label="Proforma Invoice PDF"
+              onClick={() => setShowInvoiceModal(true)}
+              className="btn btn-ghost border border-emerald-500/40 text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 text-xs py-1.5 px-3 flex items-center gap-1.5"
+            >
+              <FileText size={14} /> Proforma PI & PDF
             </button>
             <button
               aria-label="Export Excel"
@@ -1353,6 +1371,12 @@ export function DashboardPageContent() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Proforma Invoice & Quotation PDF Modal */}
+      <ProformaInvoiceModal
+        isOpen={showInvoiceModal}
+        onClose={() => setShowInvoiceModal(false)}
+      />
     </div>
   );
 }

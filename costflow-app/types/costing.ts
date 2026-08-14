@@ -100,6 +100,42 @@ export interface AnomalyResult {
   message: string;
 }
 
+export interface ProformaInvoiceConfig {
+  quoteRefNo: string;
+  quoteDate: string;
+  validUntilDate: string;
+  
+  // Sender Details
+  senderCompany: string;
+  senderGstin: string;
+  senderAddress: string;
+  senderPhone: string;
+  senderEmail: string;
+  bankName: string;
+  bankAccountNo: string;
+  bankIfsc: string;
+  upiId: string;
+  
+  // Receiver Details
+  clientCompany: string;
+  clientBuyerName: string;
+  clientGstin: string;
+  clientAddress: string;
+  clientPhone: string;
+  clientEmail: string;
+
+  // View Switch
+  viewMode: "commercial" | "open_book";
+
+  // Terms
+  paymentTerms: string;
+  deliveryTimeline: string;
+  freightTerms: string;
+  hsnSacCode: string;
+  gstRate: number;
+  unitMetric: string;
+}
+
 export interface ExportConfig {
   domain: Domain;
   blocks: CostingBlock[];
