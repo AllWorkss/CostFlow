@@ -503,7 +503,19 @@ export function UnitGeometryModal({ isOpen, onClose, onApplySuccess }: UnitGeome
                   Calculated Cross-Metric Conversion Matrix
                 </div>
                 <div className="text-xs text-cyan-300 font-mono bg-cyan-950/60 px-3 py-1 rounded-full border border-cyan-500/30">
-                  Target Pricing: {currencySym} {metrics[`totalCostPer${config.sellUnit.charAt(0).toUpperCase() + config.sellUnit.slice(1)}` as keyof typeof metrics]?.toString() || "0"} / {config.sellUnit}
+                  Target Pricing: {currencySym}{" "}
+                  {(() => {
+                    switch (config.sellUnit) {
+                      case "meter": return metrics.totalCostPerMeter.toFixed(2);
+                      case "piece": return metrics.totalCostPerPiece.toFixed(2);
+                      case "kg": return metrics.totalCostPerKg.toFixed(2);
+                      case "inch": return metrics.totalCostPerFoot ? (metrics.totalCostPerFoot / 12).toFixed(2) : (metrics.totalCostPerMeter / 39.37).toFixed(2);
+                      case "sqft": return metrics.totalCostPerSqFt.toFixed(2);
+                      case "ton": return metrics.totalCostPerTon.toFixed(0);
+                      default: return metrics.totalCostPerMeter.toFixed(2);
+                    }
+                  })()}{" "}
+                  / {config.sellUnit}
                 </div>
               </div>
 
