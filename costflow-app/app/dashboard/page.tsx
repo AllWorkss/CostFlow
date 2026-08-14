@@ -1141,7 +1141,7 @@ export function DashboardPageContent() {
                       step={0.01}
                       value={targetMargin}
                       aria-label="Target Margin Slider"
-                      onChange={(e) => setTargetMargin(parseFloat(e.target.value))}
+                      onChange={(e) => setTargetMarginState(parseFloat(e.target.value))}
                       className="w-full"
                       style={{ accentColor: "var(--cf-purple)" }}
                     />
