@@ -15,6 +15,8 @@ import {
   Globe,
   HardHat,
   Plus,
+  X,
+  CheckCircle,
 } from "lucide-react";
 import type { CostingBlock, UserRole, CostingApprovalStatus } from "@/types/costing";
 import { getVariablePermissionState } from "@/lib/auth/rbacEngine";
@@ -64,6 +66,7 @@ export const CostBlockCard = memo(function CostBlockCard({
   const IconComp = ICON_MAP[block.icon] || Plus;
 
   const vars = block?.variables || [];
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   // Local variable state for 150ms debounced smooth typing
   const [localValues, setLocalValues] = useState<Record<string, number>>(() =>
@@ -87,13 +90,13 @@ export const CostBlockCard = memo(function CostBlockCard({
     <Reorder.Item
       value={block}
       id={block.id}
-      className={`card transition-all gpu-accelerated mb-3 ${
-        !block.enabled ? "opacity-50" : ""
-      } ${block.isAnomalous ? "border-amber-500/50 bg-amber-500/5" : ""}`}
+      className={`block-card transition-all gpu-accelerated mb-4 ${
+        !block.enabled ? "disabled grayscale-[30%]" : "hover:border-indigo-500/40 hover:shadow-md"
+      } ${block.isAnomalous ? "anomalous" : ""}`}
       style={{ contain: "content" }}
     >
       <div
-        className="flex items-center gap-3 p-3 sm:p-4 cursor-pointer select-none"
+        className="flex items-center gap-3 sm:gap-4 p-4 sm:p-5 cursor-pointer select-none"
         onClick={() => onToggleExpand(block.id)}
       >
 
@@ -133,35 +136,62 @@ export const CostBlockCard = memo(function CostBlockCard({
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-1 flex-shrink-0">
-          <button
-            aria-label="Toggle Block"
-            onClick={(e) => {
-              e.stopPropagation();
-              onToggleEnable(block.id);
-            }}
-            className="btn btn-icon w-8 h-8 sm:w-9 sm:h-9"
-          >
-            {block.enabled ? (
-              <Eye size={14} color="var(--cf-blue)" />
-            ) : (
-              <EyeOff size={14} color="var(--text-3)" />
-            )}
-          </button>
-          <button
-            aria-label="Delete Block"
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete(block.id, block.label);
-            }}
-            className="btn btn-icon btn-danger w-8 h-8 sm:w-9 sm:h-9"
-          >
-            <Trash2 size={14} />
-          </button>
-          {expanded ? (
-            <ChevronUp size={15} color="var(--text-3)" />
+        <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
+          {confirmDelete ? (
+            <div className="flex items-center gap-1 bg-red-500/10 rounded-xl p-1 border border-red-500/20">
+              <span className="text-[10px] font-bold text-red-500 px-1 hidden sm:inline">Delete?</span>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(block.id, block.label);
+                  setConfirmDelete(false);
+                }}
+                className="btn btn-icon bg-red-500 text-white min-w-[44px] min-h-[44px] sm:min-w-[36px] sm:min-h-[36px] w-9 h-9 sm:w-8 sm:h-8 hover:bg-red-600 rounded-lg shadow-md shadow-red-500/20"
+              >
+                <CheckCircle size={16} />
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setConfirmDelete(false);
+                }}
+                className="btn btn-icon min-w-[44px] min-h-[44px] sm:min-w-[36px] sm:min-h-[36px] w-9 h-9 sm:w-8 sm:h-8 rounded-lg"
+              >
+                <X size={16} />
+              </button>
+            </div>
           ) : (
-            <ChevronDown size={15} color="var(--text-3)" />
+            <>
+              <button
+                aria-label="Toggle Block"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggleEnable(block.id);
+                }}
+                className="btn btn-icon min-w-[44px] min-h-[44px] sm:min-w-[36px] sm:min-h-[36px] w-10 h-10 sm:w-9 sm:h-9 rounded-xl transition-transform hover:scale-105"
+              >
+                {block.enabled ? (
+                  <Eye size={18} color="var(--cf-blue)" />
+                ) : (
+                  <EyeOff size={18} color="var(--text-3)" />
+                )}
+              </button>
+              <button
+                aria-label="Delete Block"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setConfirmDelete(true);
+                }}
+                className="btn btn-icon btn-danger min-w-[44px] min-h-[44px] sm:min-w-[36px] sm:min-h-[36px] w-10 h-10 sm:w-9 sm:h-9 rounded-xl transition-transform hover:scale-105"
+              >
+                <Trash2 size={16} />
+              </button>
+              {expanded ? (
+                <ChevronUp size={15} color="var(--text-3)" />
+              ) : (
+                <ChevronDown size={15} color="var(--text-3)" />
+              )}
+            </>
           )}
         </div>
       </div>

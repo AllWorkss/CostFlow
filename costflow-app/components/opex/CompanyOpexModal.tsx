@@ -47,6 +47,26 @@ export function CompanyOpexModal({ isOpen, onClose, onApplySuccess }: CompanyOpe
   const [opexConfig, setOpexConfigState] = useState<OpexConfig>(store.opexConfig || DEFAULT_OPEX_CONFIG);
   const [payrollConfig, setPayrollConfigState] = useState<PayrollConfig>(store.payrollConfig || DEFAULT_PAYROLL_CONFIG);
   const [customBlocks, setCustomBlocks] = useState<CustomBlockDefinition[]>([]);
+  const [showDiscardAlert, setShowDiscardAlert] = useState(false);
+
+  const isDirty = 
+    JSON.stringify(opexConfig) !== JSON.stringify(store.opexConfig || DEFAULT_OPEX_CONFIG) ||
+    JSON.stringify(payrollConfig) !== JSON.stringify(store.payrollConfig || DEFAULT_PAYROLL_CONFIG);
+
+  const handleCloseAttempt = () => {
+    if (isDirty) {
+      setShowDiscardAlert(true);
+    } else {
+      onClose();
+    }
+  };
+
+  const handleDiscard = () => {
+    setOpexConfigState(store.opexConfig || DEFAULT_OPEX_CONFIG);
+    setPayrollConfigState(store.payrollConfig || DEFAULT_PAYROLL_CONFIG);
+    setShowDiscardAlert(false);
+    onClose();
+  };
 
   // New OPEX item form state
   const [newOpexName, setNewOpexName] = useState("");
@@ -155,23 +175,40 @@ export function CompanyOpexModal({ isOpen, onClose, onApplySuccess }: CompanyOpe
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-5 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
+      <div 
+        className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-5 bg-slate-950/80 backdrop-blur-md overflow-y-auto"
+        onClick={handleCloseAttempt}
+      >
         <motion.div
           initial={{ opacity: 0, scale: 0.96, y: 15 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.96, y: 15 }}
+          onClick={(e) => e.stopPropagation()}
           className="relative w-full max-w-6xl rounded-3xl bg-slate-900 border border-slate-800 text-slate-100 shadow-2xl overflow-hidden flex flex-col my-auto max-h-[94vh]"
         >
+          {showDiscardAlert && (
+            <div className="absolute inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-sm">
+              <div className="bg-slate-900 border border-slate-700 p-6 rounded-2xl shadow-2xl max-w-sm w-full text-center">
+                <h3 className="text-lg font-bold text-white mb-2">Discard unsaved modifications?</h3>
+                <p className="text-sm text-slate-400 mb-6">Any unapplied calculations will be lost.</p>
+                <div className="flex gap-3 justify-center">
+                  <button onClick={() => setShowDiscardAlert(false)} className="btn btn-ghost">Keep Editing</button>
+                  <button onClick={handleDiscard} className="btn bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/30">Discard & Close</button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Header */}
           <div className="px-6 py-4 border-b border-slate-800/80 flex items-center justify-between bg-slate-900/90 sticky top-0 z-20">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-cyan-600 to-blue-500 flex items-center justify-center text-white shadow-lg shadow-cyan-500/20">
+              <div className="w-10 h-10 rounded-2xl bg-slate-800 flex items-center justify-center text-indigo-400 border border-slate-700 shadow-sm">
                 <Building2 size={20} />
               </div>
               <div>
                 <h2 className="text-lg font-black tracking-tight text-white flex items-center gap-2">
                   Company OPEX & Financial Modeler
-                  <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 uppercase">
+                  <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 uppercase">
                     Activity-Based Overhead Absorption
                   </span>
                 </h2>
@@ -182,7 +219,7 @@ export function CompanyOpexModal({ isOpen, onClose, onApplySuccess }: CompanyOpe
             </div>
 
             <button
-              onClick={onClose}
+              onClick={handleCloseAttempt}
               className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
             >
               <X size={20} />
@@ -205,7 +242,7 @@ export function CompanyOpexModal({ isOpen, onClose, onApplySuccess }: CompanyOpe
                   onClick={() => setActiveTab(t.id as typeof activeTab)}
                   className={`py-3 px-4 text-xs font-bold flex items-center gap-2 transition-all border-b-2 whitespace-nowrap ${
                     activeTab === t.id
-                      ? "border-cyan-500 text-cyan-400 bg-cyan-950/30"
+                      ? "border-indigo-500 text-indigo-400 bg-indigo-950/30"
                       : "border-transparent text-slate-400 hover:text-slate-200"
                   }`}
                 >

@@ -51,6 +51,23 @@ export function TeamManagementModal({ isOpen, onClose }: TeamManagementModalProp
   const [activeSubTab, setActiveSubTab] = useState<"roles" | "matrix" | "team" | "workflow">("roles");
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<UserRole>("plant_manager");
+  const [showDiscardAlert, setShowDiscardAlert] = useState(false);
+
+  const isDirty = inviteEmail.trim().length > 0;
+
+  const handleCloseAttempt = () => {
+    if (isDirty) {
+      setShowDiscardAlert(true);
+    } else {
+      onClose();
+    }
+  };
+
+  const handleDiscard = () => {
+    setInviteEmail("");
+    setShowDiscardAlert(false);
+    onClose();
+  };
 
   if (!isOpen) return null;
 
@@ -67,13 +84,30 @@ export function TeamManagementModal({ isOpen, onClose }: TeamManagementModalProp
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-5 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
+      <div 
+        className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-5 bg-slate-950/80 backdrop-blur-md overflow-y-auto"
+        onClick={handleCloseAttempt}
+      >
         <motion.div
           initial={{ opacity: 0, scale: 0.96, y: 15 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.96, y: 15 }}
+          onClick={(e) => e.stopPropagation()}
           className="relative w-full max-w-5xl rounded-3xl bg-slate-900 border border-slate-800 text-slate-100 shadow-2xl overflow-hidden flex flex-col my-auto max-h-[92vh]"
         >
+          {showDiscardAlert && (
+            <div className="absolute inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-sm">
+              <div className="bg-slate-900 border border-slate-700 p-6 rounded-2xl shadow-2xl max-w-sm w-full text-center">
+                <h3 className="text-lg font-bold text-white mb-2">Discard unsent invite?</h3>
+                <p className="text-sm text-slate-400 mb-6">Your invite details will be lost.</p>
+                <div className="flex gap-3 justify-center">
+                  <button onClick={() => setShowDiscardAlert(false)} className="btn btn-ghost">Keep Editing</button>
+                  <button onClick={handleDiscard} className="btn bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/30">Discard & Close</button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Header */}
           <div className="px-6 py-4 border-b border-slate-800/80 flex items-center justify-between bg-slate-900/90 sticky top-0 z-20">
             <div className="flex items-center gap-3">
@@ -94,7 +128,7 @@ export function TeamManagementModal({ isOpen, onClose }: TeamManagementModalProp
             </div>
 
             <button
-              onClick={onClose}
+              onClick={handleCloseAttempt}
               className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
             >
               <X size={20} />

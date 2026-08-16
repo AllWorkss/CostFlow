@@ -45,7 +45,7 @@ export function SiloTankerVisualizer({
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full items-center">
         {/* Silo Gauge Graphic */}
-        <div className="flex flex-col items-center justify-center relative h-[180px] bg-slate-950/60 rounded-xl p-2 border border-slate-800/80">
+        <div className="flex flex-col items-center justify-center relative h-[180px] bg-zinc-950/40 texture-grid rounded-xl p-2 border border-zinc-800/50">
           <svg viewBox="0 0 140 160" className="w-full h-full drop-shadow-md">
             <defs>
               <linearGradient id="siloFluidGrad" x1="0%" y1="100%" x2="0%" y2="0%">

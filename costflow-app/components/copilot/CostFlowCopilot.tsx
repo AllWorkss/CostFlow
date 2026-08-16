@@ -129,7 +129,7 @@ export function CostFlowCopilot({ onOpenInvoiceModal, onStateApplied }: CostFlow
   return (
     <>
       {/* ══════ FLOATING LAUNCHER BUTTON ══════ */}
-      <div className="fixed bottom-5 right-5 z-50 flex items-center gap-2">
+      <div className="fixed bottom-[88px] sm:bottom-5 right-4 sm:right-5 z-50 flex items-center gap-2">
         <AnimatePresence>
           {!isOpen && (
             <motion.div
@@ -166,7 +166,7 @@ export function CostFlowCopilot({ onOpenInvoiceModal, onStateApplied }: CostFlow
             initial={{ opacity: 0, y: 30, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 30, scale: 0.95 }}
-            className="fixed bottom-22 right-4 sm:right-6 z-50 w-[calc(100vw-32px)] sm:w-[420px] max-h-[620px] h-[80vh] flex flex-col rounded-2xl border shadow-2xl glass overflow-hidden"
+            className="fixed bottom-[140px] sm:bottom-22 right-4 sm:right-6 z-[60] w-[calc(100vw-32px)] sm:w-[420px] max-h-[620px] h-[75vh] sm:h-[80vh] flex flex-col rounded-2xl border shadow-2xl glass overflow-hidden"
             style={{ borderColor: "rgba(59,130,246,0.3)", background: "rgba(15,22,41,0.92)" }}
           >
             {/* ── Modal Header ── */}

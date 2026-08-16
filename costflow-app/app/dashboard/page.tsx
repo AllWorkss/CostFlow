@@ -380,6 +380,18 @@ export function DashboardPageContent() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleExport, resetToPreset, notify]);
 
+  // Prevent accidental unsaved closing
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isDirty) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [isDirty]);
+
   // Auto-save
   useEffect(() => {
     if (isDirty && projectId && isMounted) {
@@ -566,124 +578,147 @@ export function DashboardPageContent() {
 
       {/* ══════ NAV ══════ */}
       <nav className="sticky top-0 z-40 glass border-b" style={{ borderColor: "var(--border)" }}>
-        <div className="flex items-center gap-2 px-3 sm:px-6 h-14 sm:h-16 max-w-screen-2xl mx-auto">
-          {/* Back */}
-          <Link
-            href="/dashboard/projects"
-            className="btn btn-icon flex-shrink-0"
-            aria-label="Go back to workspace"
-          >
-            <ArrowLeft size={16} />
-          </Link>
-
-          {/* Logo + project name */}
-          <div className="flex items-center gap-2 min-w-0 flex-1">
-            <div
-              className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
-              style={{ background: `${preset?.color ?? "#3B82F6"}18` }}
+        <div className="flex items-center justify-between px-3 sm:px-6 h-14 sm:h-16 max-w-screen-2xl mx-auto">
+          {/* LEFT: Logo + Version */}
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1 sm:flex-none">
+            <Link
+              href="/dashboard/projects"
+              className="btn btn-icon flex-shrink-0 min-h-[44px] min-w-[44px] hidden sm:flex items-center justify-center"
+              aria-label="Go back to workspace"
             >
-              <DomainIcon size={18} color={preset?.color ?? "#3B82F6"} />
+              <ArrowLeft size={16} />
+            </Link>
+            <div className="flex items-center gap-2 min-w-0">
+              <div
+                className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                style={{ background: `${preset?.color ?? "#3B82F6"}18` }}
+              >
+                <DomainIcon size={20} color={preset?.color ?? "#3B82F6"} />
+              </div>
+              <div className="flex flex-col min-w-0 justify-center h-full">
+                <input
+                  value={projectName}
+                  onChange={(e) => setProjectName(e.target.value)}
+                  aria-label="Project Name"
+                  className="font-bold text-sm sm:text-base bg-transparent border-none outline-none truncate min-h-[24px]"
+                  style={{ color: "var(--text-1)", maxWidth: 180 }}
+                  placeholder="Project Name"
+                />
+                <span className="text-[10px] text-slate-500 font-bold tracking-wider leading-none">
+                  v3.2.0-beta
+                </span>
+              </div>
             </div>
-            <input
-              value={projectName}
-              onChange={(e) => setProjectName(e.target.value)}
-              aria-label="Project Name"
-              className="font-bold text-sm sm:text-base bg-transparent border-none outline-none min-w-0 flex-1 truncate"
-              style={{ color: "var(--text-1)", maxWidth: 180 }}
-              placeholder="Project Name"
-            />
           </div>
 
-          {/* Right controls — Consolidated Dropdowns */}
-          <div className="hidden sm:flex items-center gap-2 flex-shrink-0">
-            {/* Specialized Engines Dropdown */}
+          {/* CENTER: Search + Presets (Hidden on smaller screens) */}
+          <div className="hidden lg:flex items-center gap-3 flex-1 justify-center px-4">
+            <div className="relative w-64">
+               <input type="text" placeholder="Search..." className="cf-input py-1.5 min-h-[44px] text-sm w-full pl-9 rounded-full bg-slate-100 dark:bg-zinc-800/80 border-transparent focus:border-blue-500" />
+               <span className="absolute left-3 top-3 text-slate-400">🔍</span>
+            </div>
+            <select
+              value={domain}
+              onChange={(e) => {
+                const nextDomain = e.target.value as Domain;
+                startTransition(() => {
+                  setDomain(nextDomain);
+                });
+              }}
+              aria-label="Select Domain"
+              className="cf-input py-1.5 text-sm min-h-[44px] rounded-full bg-slate-100 dark:bg-zinc-800/80 border-transparent focus:border-blue-500"
+              style={{ width: 170 }}
+            >
+              {DOMAIN_PRESETS.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.label.split("—")[0].trim()}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* RIGHT: Dropdowns & Actions */}
+          <div className="flex items-center gap-2 sm:gap-2.5 flex-shrink-0">
+            {/* Unified Engines Dropdown */}
             <div className="relative">
               <button
                 onClick={() => {
                   setEnginesMenuOpen(!enginesMenuOpen);
                   setRbacMenuOpen(false);
                 }}
-                className="btn btn-ghost py-1.5 text-xs text-blue-400 border border-blue-500/30 bg-blue-500/10 hover:bg-blue-500/20 flex items-center gap-1.5"
+                className="btn btn-ghost min-h-[44px] px-3 py-1.5 text-xs text-blue-400 border border-blue-500/30 bg-blue-500/10 hover:bg-blue-500/20 flex items-center gap-1.5 rounded-xl"
               >
-                <Sparkles size={14} /> Specialized Engines <ChevronDown size={12} />
+                <Sparkles size={14} /> <span className="hidden sm:inline">Engines</span> <ChevronDown size={12} />
               </button>
               {enginesMenuOpen && (
-                <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl shadow-2xl z-50 p-1.5 space-y-1">
+                <div className="absolute right-0 mt-2 w-60 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl shadow-2xl z-50 p-1.5 space-y-1">
                   <button
                     onClick={() => {
                       setShowOpexModal(true);
                       setEnginesMenuOpen(false);
                     }}
-                    className="w-full text-left px-3 py-2 text-xs rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800/80 flex items-center gap-2 text-indigo-400 font-medium"
+                    className="w-full text-left px-3 py-2.5 text-xs rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800/80 flex items-center gap-2.5 text-indigo-400 font-medium min-h-[44px]"
                   >
-                    <Building2 size={14} /> Company OPEX & Overhead
+                    <Building2 size={16} /> Company OPEX & Modeler
                   </button>
                   <button
                     onClick={() => {
                       setShowLiquidModal(true);
                       setEnginesMenuOpen(false);
                     }}
-                    className="w-full text-left px-3 py-2 text-xs rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800/80 flex items-center gap-2 text-cyan-400 font-medium"
+                    className="w-full text-left px-3 py-2.5 text-xs rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800/80 flex items-center gap-2.5 text-cyan-400 font-medium min-h-[44px]"
                   >
-                    <Droplets size={14} /> Liquid Batching Engine
+                    <Droplets size={16} /> Liquid Batch Engine
                   </button>
                   <button
                     onClick={() => {
                       setShowGeometryModal(true);
                       setEnginesMenuOpen(false);
                     }}
-                    className="w-full text-left px-3 py-2 text-xs rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800/80 flex items-center gap-2 text-blue-400 font-medium"
+                    className="w-full text-left px-3 py-2.5 text-xs rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800/80 flex items-center gap-2.5 text-blue-400 font-medium min-h-[44px]"
                   >
-                    <ArrowRightLeft size={14} /> Unit Geometry Engine
+                    <ArrowRightLeft size={16} /> Unit Geometry Engine
                   </button>
+                  <div className="h-px bg-slate-200 dark:bg-zinc-800 my-1" />
                   <button
                     onClick={() => {
                       setShowWhatIfModal(true);
                       setEnginesMenuOpen(false);
                     }}
-                    className="w-full text-left px-3 py-2 text-xs rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800/80 flex items-center gap-2 text-purple-400 font-medium"
+                    className="w-full text-left px-3 py-2.5 text-xs rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800/80 flex items-center gap-2.5 text-purple-400 font-medium min-h-[44px]"
                   >
-                    <Sparkles size={14} /> "What-If" Sensitivity Tester
+                    <Sparkles size={16} /> Sensitivity Tester
                   </button>
                   <button
                     onClick={() => {
                       setShowReverseSolverModal(true);
                       setEnginesMenuOpen(false);
                     }}
-                    className="w-full text-left px-3 py-2 text-xs rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800/80 flex items-center gap-2 text-cyan-400 font-medium"
+                    className="w-full text-left px-3 py-2.5 text-xs rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800/80 flex items-center gap-2.5 text-cyan-400 font-medium min-h-[44px]"
                   >
-                    <BarChart2 size={14} /> Reverse Target Solver
+                    <BarChart2 size={16} /> Reverse Target Solver
                   </button>
                   <button
                     onClick={() => {
                       setShowRevisionDiffModal(true);
                       setEnginesMenuOpen(false);
                     }}
-                    className="w-full text-left px-3 py-2 text-xs rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800/80 flex items-center gap-2 text-indigo-400 font-medium"
+                    className="w-full text-left px-3 py-2.5 text-xs rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800/80 flex items-center gap-2.5 text-indigo-400 font-medium min-h-[44px]"
                   >
-                    <Clock size={14} /> Revision & Diff Engine
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowInvoiceModal(true);
-                      setEnginesMenuOpen(false);
-                    }}
-                    className="w-full text-left px-3 py-2 text-xs rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800/80 flex items-center gap-2 text-emerald-400 font-medium border-t border-slate-800 pt-2"
-                  >
-                    <FileText size={14} /> Proforma Invoice & PDF Quote
+                    <Clock size={16} /> Revision Diff Engine
                   </button>
                 </div>
               )}
             </div>
 
-            {/* Governance & RBAC Dropdown */}
-            <div className="relative">
+            {/* Governance Dropdown */}
+            <div className="relative hidden sm:block">
               <button
                 onClick={() => {
                   setRbacMenuOpen(!rbacMenuOpen);
                   setEnginesMenuOpen(false);
                 }}
-                className="btn btn-ghost py-1.5 text-xs text-purple-400 border border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 flex items-center gap-1.5"
+                className="btn btn-ghost min-h-[44px] px-3 py-1.5 text-xs text-purple-400 border border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 flex items-center gap-1.5 rounded-xl"
               >
                 <Shield size={14} /> {currentUser.role.replace("_", " ").toUpperCase()}{" "}
                 <ChevronDown size={12} />
@@ -695,161 +730,57 @@ export function DashboardPageContent() {
                       setShowTeamModal(true);
                       setRbacMenuOpen(false);
                     }}
-                    className="w-full text-left px-3 py-2 text-xs rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800/80 flex items-center gap-2 text-purple-400 font-medium"
+                    className="w-full text-left px-3 py-2.5 text-xs rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800/80 flex items-center gap-2.5 text-purple-400 font-medium min-h-[44px]"
                   >
-                    <Shield size={14} /> Roles & Permissions
+                    <Shield size={16} /> Roles & Permissions
                   </button>
                   <button
                     onClick={() => {
                       setShowAuditModal(true);
                       setRbacMenuOpen(false);
                     }}
-                    className="w-full text-left px-3 py-2 text-xs rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800/80 flex items-center gap-2 text-amber-400 font-medium"
+                    className="w-full text-left px-3 py-2.5 text-xs rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800/80 flex items-center gap-2.5 text-amber-400 font-medium min-h-[44px]"
                   >
-                    <Activity size={14} /> Session Audit Log
+                    <Activity size={16} /> Session Audit Log
                   </button>
                 </div>
               )}
             </div>
-            <select
-              value={domain}
-              onChange={(e) => {
-                const nextDomain = e.target.value as Domain;
-                startTransition(() => {
-                  setDomain(nextDomain);
-                });
-              }}
-              aria-label="Select Domain"
-              className="cf-input py-1.5 text-sm"
-              style={{ width: 170 }}
-            >
-              {DOMAIN_PRESETS.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.label.split("—")[0].trim()}
-                </option>
-              ))}
-            </select>
+
             <select
               value={currency}
               onChange={(e) => setCurrency(e.target.value as "INR" | "USD")}
               aria-label="Select Currency"
-              className="cf-input py-1.5 text-sm w-20"
+              className="cf-input py-1.5 text-sm w-20 min-h-[44px] hidden sm:block rounded-xl bg-slate-100 dark:bg-zinc-800/80 border-transparent focus:border-blue-500"
             >
               <option value="INR">₹ INR</option>
               <option value="USD">$ USD</option>
             </select>
+
             <button
               aria-label="Toggle Theme"
               onClick={() => setTheme(isDark ? "light" : "dark")}
-              className="btn btn-icon"
+              className="btn btn-icon min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl"
             >
-              {isDark ? <Sun size={16} /> : <Moon size={16} />}
+              {isDark ? <Sun size={18} /> : <Moon size={18} />}
             </button>
             <button
               aria-label="Share"
               onClick={handleShare}
-              className="btn btn-icon"
+              className="btn btn-icon min-h-[44px] min-w-[44px] hidden sm:flex items-center justify-center rounded-xl"
               title="Share Project"
             >
-              <Share2 size={15} />
-            </button>
-            <button
-              aria-label="Version History"
-              onClick={() => {
-                setShowHistory(true);
-                loadVersions();
-              }}
-              className="btn btn-icon"
-              title="Version History"
-            >
-              <Clock size={15} />
-            </button>
-            <button
-              aria-label="Reset Blocks"
-              onClick={() => {
-                startTransition(() => {
-                  resetToPreset();
-                });
-                notify("Reset to preset");
-              }}
-              className="btn btn-icon"
-            >
-              <RefreshCw size={15} />
-            </button>
-            <button
-              aria-label="Proforma Invoice PDF"
-              onClick={() => setShowInvoiceModal(true)}
-              className="btn btn-ghost border border-emerald-500/40 text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 text-xs py-1.5 px-3 flex items-center gap-1.5"
-            >
-              <FileText size={14} /> Proforma PI & PDF
+              <Share2 size={18} />
             </button>
             <button
               aria-label="Export Excel"
               onClick={handleExport}
               disabled={exporting}
-              className="btn btn-primary"
+              className="btn btn-primary min-h-[44px] px-4 hidden sm:flex items-center justify-center gap-2 rounded-xl text-sm font-semibold"
             >
-              <Download size={15} /> {exporting ? "Exporting…" : "Export Excel"}
+              <Download size={16} /> {exporting ? "..." : "Export"}
             </button>
           </div>
-
-          {/* Mobile: theme toggle only */}
-          <div className="flex sm:hidden items-center gap-2">
-            <button
-              aria-label="Liquid Batch Engine"
-              onClick={() => setShowLiquidModal(true)}
-              className="btn btn-icon text-cyan-400"
-            >
-              <Droplets size={15} />
-            </button>
-            <button
-              aria-label="Geometry Engine"
-              onClick={() => setShowGeometryModal(true)}
-              className="btn btn-icon text-blue-400"
-            >
-              <ArrowRightLeft size={15} />
-            </button>
-            <button
-              aria-label="Toggle Theme"
-              onClick={() => setTheme(isDark ? "light" : "dark")}
-              className="btn btn-icon"
-            >
-              {isDark ? <Sun size={15} /> : <Moon size={15} />}
-            </button>
-          </div>
-        </div>
-
-        {/* Mobile: domain + currency bar */}
-        <div
-          className="flex sm:hidden items-center gap-2 px-3 py-2 border-t"
-          style={{ borderColor: "var(--border)" }}
-        >
-          <select
-            value={domain}
-            onChange={(e) => {
-              const nextDomain = e.target.value as Domain;
-              startTransition(() => {
-                setDomain(nextDomain);
-              });
-            }}
-            aria-label="Select Domain Mobile"
-            className="cf-input py-1 text-xs flex-1"
-          >
-            {DOMAIN_PRESETS.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.label.split("—")[0].trim()}
-              </option>
-            ))}
-          </select>
-          <select
-            value={currency}
-            onChange={(e) => setCurrency(e.target.value as "INR" | "USD")}
-            aria-label="Select Currency Mobile"
-            className="cf-input py-1 text-xs w-20"
-          >
-            <option value="INR">₹ INR</option>
-            <option value="USD">$ USD</option>
-          </select>
         </div>
       </nav>
 
@@ -866,9 +797,36 @@ export function DashboardPageContent() {
         </div>
       )}
 
+      {/* ── Pipeline Stepper ── */}
+      <div className="max-w-screen-2xl mx-auto px-3 sm:px-6 pt-5 pb-1">
+        <div className="flex items-center gap-3 sm:gap-6 overflow-x-auto no-scrollbar pb-2">
+          {/* Step 1 */}
+          <div className="flex flex-col gap-1.5 min-w-[140px] flex-1">
+            <div className={`h-1.5 rounded-full transition-colors ${blocks.length > 0 ? 'bg-indigo-600' : 'bg-slate-200 dark:bg-zinc-800'}`} />
+            <div className={`text-[10px] font-bold uppercase tracking-wider ${blocks.length > 0 ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400 dark:text-zinc-500'}`}>
+              1. Raw Materials & Geometry
+            </div>
+          </div>
+          {/* Step 2 */}
+          <div className="flex flex-col gap-1.5 min-w-[140px] flex-1">
+            <div className={`h-1.5 rounded-full transition-colors ${(summary?.subtotal ?? 0) > 0 ? 'bg-indigo-600' : 'bg-slate-200 dark:bg-zinc-800'}`} />
+            <div className={`text-[10px] font-bold uppercase tracking-wider ${(summary?.subtotal ?? 0) > 0 ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400 dark:text-zinc-500'}`}>
+              2. Processing & OPEX
+            </div>
+          </div>
+          {/* Step 3 */}
+          <div className="flex flex-col gap-1.5 min-w-[140px] flex-1">
+            <div className={`h-1.5 rounded-full transition-colors ${(summary?.sellingPrice ?? 0) > 0 ? 'bg-indigo-600' : 'bg-slate-200 dark:bg-zinc-800'}`} />
+            <div className={`text-[10px] font-bold uppercase tracking-wider ${(summary?.sellingPrice ?? 0) > 0 ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400 dark:text-zinc-500'}`}>
+              3. Margin & PI Output
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* ══════ MAIN CONTENT ══════ */}
-      <div className="max-w-screen-2xl mx-auto px-3 sm:px-6 py-4 sm:py-6 overflow-x-hidden">
-        <div className="flex flex-col xl:flex-row gap-5">
+      <div className="max-w-screen-2xl mx-auto px-3 sm:px-6 py-2 sm:py-4 overflow-x-hidden">
+        <div className="flex flex-col xl:flex-row gap-6">
           {/* ════ LEFT: BLOCKS PANEL ════ */}
           <div className={`xl:flex-1 ${mobileTab === "summary" ? "hidden sm:block" : "block"}`}>
             {/* Quick-Start Industry Presets Bar */}
@@ -1098,42 +1056,61 @@ export function DashboardPageContent() {
           >
             {/* Cost Summary Card */}
             <div className="metric-card">
-              <h3 className="font-bold mb-3 flex items-center justify-between" style={{ color: "var(--text-1)" }}>
+              <h3 className="font-bold mb-3 flex items-center justify-between text-[var(--text-1)]">
                 <span className="flex items-center gap-2">
-                  <TrendingUp size={17} color="var(--cf-blue)" /> Cost Summary
+                  <TrendingUp size={17} className="text-indigo-500" /> Cost Summary
                 </span>
                 {batchMultiplier > 1 && (
-                  <span className="badge badge-blue text-[10px] font-bold">
+                  <span className="badge bg-indigo-500/10 text-indigo-500 text-[10px] font-bold">
                     {batchMultiplier}x Batch
                   </span>
                 )}
               </h3>
               {summary ? (
                 <>
-                  {[
-                    { label: "Direct Costs", value: summary.directCosts, color: "var(--cf-blue)" },
-                    { label: "Factory Overheads", value: summary.factoryOverheads, color: "var(--cf-purple)" },
-                    { label: "Subtotal", value: summary.subtotal, color: "var(--text-1)" },
-                    { label: "Tax / GST", value: summary.taxAmount, color: "var(--cf-red)" },
-                    { label: "Profit", value: summary.profitAmount, color: "var(--cf-emerald)" },
-                  ].map((row) => (
-                    <div
-                      key={row.label}
-                      className="flex justify-between items-center py-2 border-b"
-                      style={{ borderColor: "var(--border)" }}
-                    >
-                      <span className="text-sm" style={{ color: "var(--text-2)" }}>
-                        {row.label}
-                      </span>
-                      <span
-                        className="font-semibold text-sm font-mono"
-                        style={{ color: row.color }}
-                      >
-                        {fmt(row.value, currency)}
-                      </span>
+                  {/* Total Cost Section */}
+                  <div className="mb-2">
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Total Cost (Pre-Tax)</div>
+                    <div className="flex justify-between items-center py-1.5 border-b border-[var(--border)]">
+                      <span className="text-sm text-[var(--text-2)]">Direct Costs</span>
+                      <span className="font-medium text-sm font-mono text-[var(--text-1)]">{fmt(summary.directCosts, currency)}</span>
                     </div>
-                  ))}
+                    <div className="flex justify-between items-center py-1.5 border-b border-[var(--border)]">
+                      <span className="text-sm text-[var(--text-2)]">Factory Overheads</span>
+                      <span className="font-medium text-sm font-mono text-[var(--text-1)]">{fmt(summary.factoryOverheads, currency)}</span>
+                    </div>
+                    <div className="flex justify-between items-center py-2 border-b border-[var(--border)] bg-slate-50 dark:bg-zinc-800/30 px-2 rounded-md mt-1">
+                      <span className="text-sm font-bold text-[var(--text-1)]">Subtotal</span>
+                      <span className="font-bold text-sm font-mono text-[var(--text-1)]">{fmt(summary.subtotal, currency)}</span>
+                    </div>
+                  </div>
+
+                  {/* Tax Breakdown */}
+                  <div className="mb-2 mt-4">
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Tax & Levies</div>
+                    <div className="flex justify-between items-center py-1.5 border-b border-[var(--border)]">
+                      <span className="text-sm text-[var(--text-2)]">Tax / GST</span>
+                      <span className="font-medium text-sm font-mono text-amber-500">{fmt(summary.taxAmount, currency)}</span>
+                    </div>
+                  </div>
+
+                  {/* Profit Margin */}
+                  <div className="mb-2 mt-4">
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Net Profit Margin</div>
+                    <div className="flex justify-between items-center py-1.5 border-b border-[var(--border)]">
+                      <span className="text-sm text-[var(--text-2)]">Profit Target</span>
+                      <span className="font-medium text-sm font-mono text-emerald-500">{fmt(summary.profitAmount, currency)}</span>
+                    </div>
+                  </div>
+
                   <SellingPriceCard value={summary.sellingPrice} currency={currency} />
+
+                  <button
+                    onClick={() => setShowInvoiceModal(true)}
+                    className="btn w-full py-3 mb-2 bg-indigo-600 hover:bg-indigo-700 text-white shadow-md rounded-xl font-bold flex justify-center gap-2"
+                  >
+                    <FileText size={16} /> 1-Click Generate PI
+                  </button>
 
                   {/* Reverse Target Price Solver Result Card */}
                   {summary.targetPriceSolverEnabled && (
@@ -1274,53 +1251,34 @@ export function DashboardPageContent() {
         </div>
       </div>
 
-      {/* ══════ MOBILE BOTTOM NAV ══════ */}
-      <div className="mobile-nav safe-bottom">
-        <Link
-          href="/"
-          aria-label="Home"
-          className="flex flex-col items-center gap-0.5 text-xs px-2"
-          style={{ color: "var(--text-3)" }}
-        >
-          <ArrowLeft size={20} /> <span>Home</span>
-        </Link>
-        <button
-          aria-label="Blocks tab"
-          onClick={() => setMobileTab("blocks")}
-          className="flex flex-col items-center gap-0.5 text-xs px-2"
-          style={{ color: mobileTab === "blocks" ? "var(--cf-blue)" : "var(--text-3)" }}
-        >
-          <span className="text-xl">🧱</span>
-          <span>Blocks</span>
-        </button>
-        <button
-          aria-label="Summary tab"
-          onClick={() => setMobileTab("summary")}
-          className="flex flex-col items-center gap-0.5 text-xs px-2"
-          style={{ color: mobileTab === "summary" ? "var(--cf-blue)" : "var(--text-3)" }}
-        >
-          <span className="text-xl">📊</span>
-          <span>Summary</span>
-        </button>
-        <Link
-          href="/flow"
-          aria-label="Flow view"
-          className="flex flex-col items-center gap-0.5 text-xs px-2"
-          style={{ color: "var(--text-3)" }}
-        >
-          <BarChart2 size={20} />
-          <span>Flow</span>
-        </Link>
-        <button
-          aria-label="Export button"
-          onClick={handleExport}
-          disabled={exporting}
-          className="flex flex-col items-center gap-0.5 text-xs px-2"
-          style={{ color: exporting ? "var(--text-3)" : "var(--cf-blue)" }}
-        >
-          <Download size={20} />
-          <span>{exporting ? "…" : "Export"}</span>
-        </button>
+      {/* ══════ MOBILE BOTTOM NAV & SUMMARY DRAWER ══════ */}
+      <div className="mobile-nav safe-bottom flex flex-col pointer-events-none justify-end pb-0 sm:hidden">
+        <div className="pointer-events-auto w-full bg-slate-900/95 backdrop-blur-xl border-t border-slate-800 shadow-[0_-20px_40px_rgba(0,0,0,0.5)]">
+           <div className="flex items-center justify-between px-5 py-3 pb-safe">
+             <div className="flex flex-col">
+               <span className="text-[10px] uppercase tracking-widest text-slate-400 font-bold mb-0.5">Final Selling Price</span>
+               <span className="text-xl font-black text-emerald-400 font-mono">{fmt(summary?.sellingPrice ?? 0, currency)}</span>
+             </div>
+             
+             <div className="flex gap-2">
+               <button
+                 onClick={() => setMobileTab(mobileTab === "summary" ? "blocks" : "summary")}
+                 className="w-11 h-11 min-h-[44px] min-w-[44px] rounded-full bg-slate-800 flex items-center justify-center border border-slate-700 text-white shadow-md"
+                 title="Toggle Details"
+               >
+                 {mobileTab === "summary" ? <X size={18} /> : <BarChart2 size={18} />}
+               </button>
+               <button
+                 onClick={handleExport}
+                 disabled={exporting}
+                 className="w-11 h-11 min-h-[44px] min-w-[44px] rounded-full bg-blue-600 flex items-center justify-center border border-blue-500 text-white shadow-lg shadow-blue-500/20"
+                 title="Export"
+               >
+                 <Download size={18} />
+               </button>
+             </div>
+           </div>
+        </div>
       </div>
 
       {/* ══════ UNIT & GEOMETRY MODAL ══════ */}

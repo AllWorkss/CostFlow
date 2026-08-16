@@ -13,6 +13,7 @@ import {
   Plus,
   Trash2,
   Box,
+  ChevronRight,
 } from "lucide-react";
 import type {
   LiquidBatchConfig,
@@ -49,6 +50,23 @@ export function LiquidBatchModal({ isOpen, onClose, onApplySuccess }: LiquidBatc
   );
 
   const [activeTab, setActiveTab] = useState<"inflow" | "loss" | "sku" | "waterfall">("inflow");
+  const [showDiscardAlert, setShowDiscardAlert] = useState(false);
+
+  const isDirty = JSON.stringify(config) !== JSON.stringify(store.liquidBatchConfig || DEFAULT_LIQUID_BATCH_CONFIG);
+
+  const handleCloseAttempt = () => {
+    if (isDirty) {
+      setShowDiscardAlert(true);
+    } else {
+      onClose();
+    }
+  };
+
+  const handleDiscard = () => {
+    setConfig(store.liquidBatchConfig || DEFAULT_LIQUID_BATCH_CONFIG);
+    setShowDiscardAlert(false);
+    onClose();
+  };
 
   const metrics = calculateLiquidBatchMetrics(config);
   const rawFluidPricePerLiter = calculateRawFluidPricePerLiter(config);
@@ -92,34 +110,51 @@ export function LiquidBatchModal({ isOpen, onClose, onApplySuccess }: LiquidBatc
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-5 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
+      <div 
+        className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-5 bg-slate-950/80 backdrop-blur-md overflow-y-auto"
+        onClick={handleCloseAttempt}
+      >
         <motion.div
           initial={{ opacity: 0, scale: 0.96, y: 15 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.96, y: 15 }}
+          onClick={(e) => e.stopPropagation()}
           className="relative w-full max-w-5xl rounded-3xl bg-slate-900 border border-slate-800 text-slate-100 shadow-2xl overflow-hidden flex flex-col my-auto max-h-[92vh]"
         >
+          {showDiscardAlert && (
+            <div className="absolute inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-sm">
+              <div className="bg-slate-900 border border-slate-700 p-6 rounded-2xl shadow-2xl max-w-sm w-full text-center">
+                <h3 className="text-lg font-bold text-white mb-2">Discard unsaved modifications?</h3>
+                <p className="text-sm text-slate-400 mb-6">Any unapplied calculations will be lost.</p>
+                <div className="flex gap-3 justify-center">
+                  <button onClick={() => setShowDiscardAlert(false)} className="btn btn-ghost">Keep Editing</button>
+                  <button onClick={handleDiscard} className="btn bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/30">Discard & Close</button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Header */}
           <div className="px-6 py-4 border-b border-slate-800/80 flex items-center justify-between bg-slate-900/90 sticky top-0 z-20">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-cyan-600 to-blue-500 flex items-center justify-center text-white shadow-lg shadow-cyan-500/20">
+              <div className="w-10 h-10 rounded-2xl bg-slate-800 flex items-center justify-center text-indigo-400 border border-slate-700 shadow-sm">
                 <Droplets size={20} />
               </div>
               <div>
                 <h2 className="text-lg font-black tracking-tight text-white flex items-center gap-2">
                   Bulk Liquid, Chemical & Beverage Batch Engine
-                  <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 uppercase">
+                  <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 uppercase">
                     Amul Model
                   </span>
                 </h2>
-                <p className="text-xs text-slate-400">
-                  Bulk Silo Capacity $\rightarrow$ Specific Gravity $\rightarrow$ Multi-Stage Shrinkage $\rightarrow$ Packaging BOM $\rightarrow$ MRP Waterfall
+                <p className="text-xs text-slate-400 flex items-center gap-1.5 flex-wrap">
+                  Bulk Silo Capacity <ChevronRight size={12} className="opacity-50" /> Specific Gravity <ChevronRight size={12} className="opacity-50" /> Multi-Stage Shrinkage <ChevronRight size={12} className="opacity-50" /> Packaging BOM <ChevronRight size={12} className="opacity-50" /> MRP Waterfall
                 </p>
               </div>
             </div>
 
             <button
-              onClick={onClose}
+              onClick={handleCloseAttempt}
               className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
             >
               <X size={20} />
@@ -141,7 +176,7 @@ export function LiquidBatchModal({ isOpen, onClose, onApplySuccess }: LiquidBatc
                   onClick={() => setActiveTab(tab.id as typeof activeTab)}
                   className={`py-3 px-4 text-xs font-bold flex items-center gap-2 transition-all border-b-2 ${
                     activeTab === tab.id
-                      ? "border-cyan-500 text-cyan-400 bg-cyan-950/30"
+                      ? "border-indigo-500 text-indigo-400 bg-indigo-950/30"
                       : "border-transparent text-slate-400 hover:text-slate-200"
                   }`}
                 >

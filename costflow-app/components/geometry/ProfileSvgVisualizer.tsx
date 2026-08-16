@@ -21,9 +21,9 @@ export function ProfileSvgVisualizer({
   const dimColor = "#F59E0B";
 
   return (
-    <div className="flex flex-col items-center justify-center p-4 rounded-2xl bg-slate-900/60 border border-slate-800 text-slate-100 shadow-inner w-full">
+    <div className="flex flex-col items-center justify-center p-4 rounded-2xl bg-zinc-950/40 texture-grid border border-zinc-800/50 text-slate-100 shadow-sm w-full">
       <div className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2 flex items-center gap-1.5">
-        <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+        <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span>
         Live 2D Dimension Visualizer — {materialName}
       </div>
 

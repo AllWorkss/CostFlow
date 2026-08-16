@@ -62,38 +62,57 @@ const SELL_UNITS: { id: SellUnit; label: string }[] = [
 export function UnitGeometryModal({ isOpen, onClose, onApplySuccess }: UnitGeometryModalProps) {
   const store = useCostingStore();
 
+  const DEFAULT_CONFIG: GeometryConfig = {
+    enabled: true,
+    profile: "round_bar",
+    materialId: "steel",
+    customDensity_g_cm3: 7.85,
+    dimensions: {
+      diameter_mm: 50,
+      outer_dia_mm: 60,
+      inner_dia_mm: 50,
+      width_mm: 100,
+      thickness_mm: 10,
+      across_flats_mm: 25,
+      piece_length_mm: 500,
+      stock_length_mm: 6000,
+    },
+    cutting: {
+      kerf_mm: 3,
+      scrapAllowancePct: 0.05,
+      fixedScrapKg: 0,
+    },
+    secondaryProcessing: {
+      finishCostPerMeter: 45,
+      finishCostPerKg: 0,
+      finishCostPerPiece: 0,
+    },
+    buyUnit: "kg",
+    sellUnit: "meter",
+    buyPricePerUnit: 80,
+  };
+
   const [config, setConfig] = useState<GeometryConfig>(
-    store.geometryConfig || {
-      enabled: true,
-      profile: "round_bar",
-      materialId: "steel",
-      customDensity_g_cm3: 7.85,
-      dimensions: {
-        diameter_mm: 50,
-        outer_dia_mm: 60,
-        inner_dia_mm: 50,
-        width_mm: 100,
-        thickness_mm: 10,
-        across_flats_mm: 25,
-        piece_length_mm: 500,
-        stock_length_mm: 6000,
-      },
-      cutting: {
-        kerf_mm: 3,
-        scrapAllowancePct: 0.05,
-        fixedScrapKg: 0,
-      },
-      secondaryProcessing: {
-        finishCostPerMeter: 45,
-        finishCostPerKg: 0,
-        finishCostPerPiece: 0,
-      },
-      buyUnit: "kg",
-      sellUnit: "meter",
-      buyPricePerUnit: 80,
-    }
+    store.geometryConfig || DEFAULT_CONFIG
   );
 
+  const [showDiscardAlert, setShowDiscardAlert] = useState(false);
+
+  const isDirty = JSON.stringify(config) !== JSON.stringify(store.geometryConfig || DEFAULT_CONFIG);
+
+  const handleCloseAttempt = () => {
+    if (isDirty) {
+      setShowDiscardAlert(true);
+    } else {
+      onClose();
+    }
+  };
+
+  const handleDiscard = () => {
+    setConfig(store.geometryConfig || DEFAULT_CONFIG);
+    setShowDiscardAlert(false);
+    onClose();
+  };
   const metrics = calculateGeometryMetrics(config);
   const currencySym = store.currency === "INR" ? "₹" : "$";
   const activeMaterial = MATERIAL_DENSITIES.find((m) => m.id === config.materialId);
@@ -129,23 +148,40 @@ export function UnitGeometryModal({ isOpen, onClose, onApplySuccess }: UnitGeome
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-5 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
+      <div 
+        className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-5 bg-slate-950/80 backdrop-blur-md overflow-y-auto"
+        onClick={handleCloseAttempt}
+      >
         <motion.div
           initial={{ opacity: 0, scale: 0.96, y: 15 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.96, y: 15 }}
+          onClick={(e) => e.stopPropagation()}
           className="relative w-full max-w-5xl rounded-3xl bg-slate-900 border border-slate-800 text-slate-100 shadow-2xl overflow-hidden flex flex-col my-auto max-h-[92vh]"
         >
+          {showDiscardAlert && (
+            <div className="absolute inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-sm">
+              <div className="bg-slate-900 border border-slate-700 p-6 rounded-2xl shadow-2xl max-w-sm w-full text-center">
+                <h3 className="text-lg font-bold text-white mb-2">Discard unsaved modifications?</h3>
+                <p className="text-sm text-slate-400 mb-6">Any unapplied calculations will be lost.</p>
+                <div className="flex gap-3 justify-center">
+                  <button onClick={() => setShowDiscardAlert(false)} className="btn btn-ghost">Keep Editing</button>
+                  <button onClick={handleDiscard} className="btn bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/30">Discard & Close</button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Header */}
           <div className="px-6 py-4 border-b border-slate-800/80 flex items-center justify-between bg-slate-900/90 sticky top-0 z-20">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 to-cyan-500 flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
+              <div className="w-10 h-10 rounded-2xl bg-slate-800 flex items-center justify-center text-indigo-400 border border-slate-700 shadow-sm">
                 <ArrowRightLeft size={20} />
               </div>
               <div>
                 <h2 className="text-lg font-black tracking-tight text-white flex items-center gap-2">
                   Universal Cross-Dimensional Unit & Geometry Engine
-                  <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 uppercase">
+                  <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 uppercase">
                     Live Formula
                   </span>
                 </h2>
@@ -156,7 +192,7 @@ export function UnitGeometryModal({ isOpen, onClose, onApplySuccess }: UnitGeome
             </div>
 
             <button
-              onClick={onClose}
+              onClick={handleCloseAttempt}
               className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
             >
               <X size={20} />
