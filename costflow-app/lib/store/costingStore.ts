@@ -98,6 +98,7 @@ interface CostingStore {
   setApprovalStatus: (status: CostingApprovalStatus) => void;
   addAuditLog: (entry: AuditLogEntry) => void;
   loadProjectState: (projectId: string, data: any) => void;
+  applyCopilotState: (data: any) => void;
   recompute: () => void;
   resetToPreset: () => void;
 }
@@ -490,9 +491,90 @@ export const useCostingStore = create<CostingStore>()(
           approvalStatus: "draft",
           auditLogs: [],
           opexConfig: DEFAULT_OPEX_CONFIG,
-          payrollConfig: DEFAULT_PAYROLL_CONFIG,
           companyMetrics: calculateCompanyFinancials(DEFAULT_OPEX_CONFIG, DEFAULT_PAYROLL_CONFIG, 150000, 0, 0.25),
         });
+        get().recompute();
+      },
+
+      applyCopilotState: (data: any) => {
+        if (!data) return;
+        set((state) => {
+          let nextMarginPct = state.targetMarginPct;
+          if (data.profitMarkupPct !== undefined) {
+            nextMarginPct = data.profitMarkupPct > 1 ? data.profitMarkupPct / 100 : data.profitMarkupPct;
+          }
+
+          const nextBlocks = state.blocks.map((b) => {
+            if (b.type === "raw_material" && data.rawMaterialCost !== undefined) {
+              return {
+                ...b,
+                variables: b.variables.map((v) => {
+                  if (v.id === "unitCost" || v.id === "materialCostPerSqm" || v.id === "purchasePrice" || v.id === "cogsCost" || v.id === "amount") {
+                    return { ...v, value: data.rawMaterialCost };
+                  }
+                  if (v.id === "qty" && data.rawMaterialQty !== undefined) {
+                    return { ...v, value: data.rawMaterialQty };
+                  }
+                  return v;
+                }),
+              };
+            }
+            if (b.type === "wastage" && data.scrapPct !== undefined) {
+              return {
+                ...b,
+                variables: b.variables.map((v) => {
+                  if (v.id === "scrapPct" || v.id === "yieldLossPct" || v.id === "spoilagePct") {
+                    return { ...v, value: data.scrapPct > 1 ? data.scrapPct / 100 : data.scrapPct };
+                  }
+                  return v;
+                }),
+              };
+            }
+            if (b.type === "direct_labor" && data.laborCost !== undefined) {
+              return {
+                ...b,
+                variables: b.variables.map((v) => {
+                  if (v.id === "hourlyRate" || v.id === "laborCostPerSqm" || v.id === "amount") {
+                    return { ...v, value: data.laborCost };
+                  }
+                  return v;
+                }),
+              };
+            }
+            if (b.type === "finishing" && data.finishingCost !== undefined) {
+              return {
+                ...b,
+                variables: b.variables.map((v) => {
+                  if (v.id === "finishCostPerMeter" || v.id === "amount") {
+                    return { ...v, value: data.finishingCost };
+                  }
+                  return v;
+                }),
+              };
+            }
+            if (b.type === "tax_gst" && data.taxGSTRate !== undefined) {
+              return {
+                ...b,
+                variables: b.variables.map((v) => {
+                  if (v.id === "gstRate" || v.id === "taxRate") {
+                    return { ...v, value: data.taxGSTRate > 1 ? data.taxGSTRate / 100 : data.taxGSTRate };
+                  }
+                  return v;
+                }),
+              };
+            }
+            return b;
+          });
+
+          return {
+            targetMarginPct: nextMarginPct,
+            blocks: nextBlocks,
+            targetPriceSolverEnabled: data.targetSellingPrice !== undefined ? true : state.targetPriceSolverEnabled,
+            targetSellingPrice: data.targetSellingPrice !== undefined ? data.targetSellingPrice : state.targetSellingPrice,
+            isDirty: true,
+          };
+        });
+
         get().recompute();
       },
 

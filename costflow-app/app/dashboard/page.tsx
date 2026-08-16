@@ -48,6 +48,11 @@ const BlockBarChart = dynamic(
   }
 );
 
+const CostFlowCopilot = dynamic(
+  () => import("@/components/copilot/CostFlowCopilot").then((m) => m.CostFlowCopilot),
+  { ssr: false }
+);
+
 /* ─── Icon maps ─── */
 const DOMAIN_ICONS: Record<string, React.ComponentType<LucideProps>> = {
   manufacturing: Factory,
@@ -1431,6 +1436,12 @@ export function DashboardPageContent() {
       <RevisionDiffModal
         isOpen={showRevisionDiffModal}
         onClose={() => setShowRevisionDiffModal(false)}
+      />
+
+      {/* Embedded Floating AI Costing Copilot */}
+      <CostFlowCopilot
+        onOpenInvoiceModal={() => setShowInvoiceModal(true)}
+        onStateApplied={() => notify("⚡ Autonomous AI Copilot: Updated canvas parameters in real-time!")}
       />
     </div>
   );

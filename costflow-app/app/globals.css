@@ -293,6 +293,12 @@ code, pre, .mono { font-family: 'JetBrains Mono', monospace; }
   50%    { transform:rotate(1deg); }
 }
 
+@keyframes pulseGlowGreen {
+  0%, 100% { box-shadow: 0 0 0px rgba(16,185,129,0); border-color: var(--border); }
+  50% { box-shadow: 0 0 24px rgba(16,185,129,0.7), 0 0 48px rgba(16,185,129,0.3); border-color: #10B981; }
+}
+
+.copilot-pulse-green { animation: pulseGlowGreen 1.8s ease-in-out 2; }
 .pulse-glow { animation: pulseGlow 2.2s ease-in-out infinite; }
 .fade-up    { animation: fadeUp 0.5s ease both; }
 .bounce-in  { animation: bounceIn 0.35s ease both; }

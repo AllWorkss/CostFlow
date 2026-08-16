@@ -31,6 +31,12 @@ import {
 import { DOMAIN_PRESETS } from "@/lib/engine/domainPresets";
 import { useCostingStore } from "@/lib/store/costingStore";
 import type { Domain } from "@/types/costing";
+import dynamic from "next/dynamic";
+
+const CostFlowCopilot = dynamic(
+  () => import("@/components/copilot/CostFlowCopilot").then((m) => m.CostFlowCopilot),
+  { ssr: false }
+);
 
 /* ── Icon maps ── */
 const DOMAIN_ICONS: Record<string, React.ComponentType<LucideProps>> = {
@@ -406,6 +412,9 @@ export default function LandingPage() {
           GitHub ↗
         </a>
       </footer>
+
+      {/* Floating AI Costing Copilot */}
+      <CostFlowCopilot />
     </div>
   );
 }
