@@ -65,6 +65,7 @@ interface CostingStore {
   batchMultiplier: number;
   targetPriceSolverEnabled: boolean;
   targetSellingPrice: number;
+  gstRate: number;
 
   forexConfig: ForexConfig;
   commodityIndices: CommodityIndex[];
@@ -80,6 +81,7 @@ interface CostingStore {
   setTargetMargin: (pct: number) => void;
   setMarginMode: (mode: MarginMode) => void;
   setBatchMultiplier: (mult: number) => void;
+  setGstRate: (rate: number) => void;
   setTargetPriceSolver: (enabled: boolean, targetSellingPrice?: number) => void;
   setForexConfig: (config: Partial<ForexConfig>) => void;
   setWhatIfConfig: (config: Partial<WhatIfScenarioConfig>) => void;
@@ -135,6 +137,7 @@ export const useCostingStore = create<CostingStore>()(
       batchMultiplier: 1,
       targetPriceSolverEnabled: false,
       targetSellingPrice: 0,
+      gstRate: 0.18,
 
       forexConfig: {
         baseCurrency: "INR",
@@ -176,6 +179,10 @@ export const useCostingStore = create<CostingStore>()(
       setBatchMultiplier: (mult) => {
         const batchMultiplier = Math.max(1, Math.round(mult));
         set({ batchMultiplier, isDirty: true });
+        get().recompute();
+      },
+      setGstRate: (rate) => {
+        set({ gstRate: rate, isDirty: true });
         get().recompute();
       },
       setTargetPriceSolver: (enabled, price) => {
@@ -586,6 +593,7 @@ export const useCostingStore = create<CostingStore>()(
           batchMultiplier,
           targetPriceSolverEnabled,
           targetSellingPrice,
+          gstRate,
         } = get();
         const computed = computeAllBlocks(blocks);
         const anomalies = detectAnomalies(computed);
@@ -596,7 +604,8 @@ export const useCostingStore = create<CostingStore>()(
           marginMode,
           batchMultiplier,
           targetPriceSolverEnabled,
-          targetSellingPrice
+          targetSellingPrice,
+          gstRate
         );
         set({ blocks: markedBlocks, summary });
       },

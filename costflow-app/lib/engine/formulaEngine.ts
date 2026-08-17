@@ -89,7 +89,8 @@ export function calculateSummary(
   marginMode: MarginMode = "markup_on_cost",
   batchMultiplier = 1,
   targetPriceSolverEnabled = false,
-  targetSellingPrice = 0
+  targetSellingPrice = 0,
+  gstRate = 0.18
 ): CostingSummary {
   const computed = computeAllBlocks(blocks);
 
@@ -97,7 +98,7 @@ export function calculateSummary(
   let laborCost = 0;
   let overheadCost = 0;
   let wastageAmount = 0;
-  let taxRate = 0.18;
+  let taxRate = gstRate;
   let taxAmount = 0;
   let profitAmount = 0;
   let rawMaterialQty = 1;

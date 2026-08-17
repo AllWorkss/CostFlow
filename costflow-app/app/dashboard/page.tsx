@@ -9,6 +9,7 @@ import {
   BarChart2, ArrowLeft, Sun, Moon, Factory, GraduationCap,
   ShoppingCart, Globe, HardHat, X, ArrowRightLeft, Droplets,
   Shield, Activity, Lock, UserCheck, Building2, Info, Share2, Clock, FileText,
+  Package, Settings,
   type LucideProps,
 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -24,7 +25,6 @@ import { TeamManagementModal } from "@/components/rbac/TeamManagementModal";
 import { AuditTrailModal } from "@/components/rbac/AuditTrailModal";
 import { CompanyOpexModal } from "@/components/opex/CompanyOpexModal";
 import { ProformaInvoiceModal } from "@/components/invoice/ProformaInvoiceModal";
-import { TickerStrip } from "@/components/forex/TickerStrip";
 import { WhatIfSensitivityModal } from "@/components/sensitivity/WhatIfSensitivityModal";
 import { ReverseTargetSolverModal } from "@/components/solver/ReverseTargetSolverModal";
 import { RevisionDiffModal } from "@/components/revision/RevisionDiffModal";
@@ -167,6 +167,7 @@ export function DashboardPageContent() {
       batchMultiplier: state.batchMultiplier,
       targetPriceSolverEnabled: state.targetPriceSolverEnabled,
       targetSellingPrice: state.targetSellingPrice,
+      gstRate: state.gstRate,
       setMarginMode: state.setMarginMode,
       setBatchMultiplier: state.setBatchMultiplier,
       setTargetPriceSolver: state.setTargetPriceSolver,
@@ -175,6 +176,7 @@ export function DashboardPageContent() {
       setCompanyName: state.setCompanyName,
       setCurrency: state.setCurrency,
       setTargetMargin: state.setTargetMargin,
+      setGstRate: state.setGstRate,
       updateBlockVariable: state.updateBlockVariable,
       toggleBlock: state.toggleBlock,
       reorderBlocks: state.reorderBlocks,
@@ -573,9 +575,6 @@ export function DashboardPageContent() {
         )}
       </AnimatePresence>
 
-      {/* ══════ LIVE COMMODITY & FOREX TICKER STRIP ══════ */}
-      <TickerStrip />
-
       {/* ══════ NAV ══════ */}
       <nav className="sticky top-0 z-40 glass border-b" style={{ borderColor: "var(--border)" }}>
         <div className="flex items-center justify-between px-3 sm:px-6 h-14 sm:h-16 max-w-screen-2xl mx-auto">
@@ -605,17 +604,16 @@ export function DashboardPageContent() {
                   placeholder="Project Name"
                 />
                 <span className="text-[10px] text-slate-500 font-bold tracking-wider leading-none">
-                  v3.2.0-beta
+                  v2.4
                 </span>
               </div>
             </div>
           </div>
 
-          {/* CENTER: Search + Presets (Hidden on smaller screens) */}
+          {/* CENTER: Workspace Switcher */}
           <div className="hidden lg:flex items-center gap-3 flex-1 justify-center px-4">
-            <div className="relative w-64">
-               <input type="text" placeholder="Search..." className="cf-input py-1.5 min-h-[44px] text-sm w-full pl-9 rounded-full bg-slate-100 dark:bg-zinc-800/80 border-transparent focus:border-blue-500" />
-               <span className="absolute left-3 top-3 text-slate-400">🔍</span>
+            <div className="text-sm font-medium text-slate-500 mr-2 flex items-center gap-2">
+              <Factory size={16} /> Active Workspace:
             </div>
             <select
               value={domain}
@@ -626,8 +624,8 @@ export function DashboardPageContent() {
                 });
               }}
               aria-label="Select Domain"
-              className="cf-input py-1.5 text-sm min-h-[44px] rounded-full bg-slate-100 dark:bg-zinc-800/80 border-transparent focus:border-blue-500"
-              style={{ width: 170 }}
+              className="cf-input py-1.5 text-sm min-h-[44px] rounded-md bg-slate-100 dark:bg-zinc-800/80 border border-slate-200 dark:border-zinc-700 focus:border-blue-500"
+              style={{ minWidth: 200 }}
             >
               {DOMAIN_PRESETS.map((p) => (
                 <option key={p.id} value={p.id}>
@@ -637,121 +635,13 @@ export function DashboardPageContent() {
             </select>
           </div>
 
-          {/* RIGHT: Dropdowns & Actions */}
+          {/* RIGHT: Essential Actions */}
           <div className="flex items-center gap-2 sm:gap-2.5 flex-shrink-0">
-            {/* Unified Engines Dropdown */}
-            <div className="relative">
-              <button
-                onClick={() => {
-                  setEnginesMenuOpen(!enginesMenuOpen);
-                  setRbacMenuOpen(false);
-                }}
-                className="btn btn-ghost min-h-[44px] px-3 py-1.5 text-xs text-blue-400 border border-blue-500/30 bg-blue-500/10 hover:bg-blue-500/20 flex items-center gap-1.5 rounded-xl"
-              >
-                <Sparkles size={14} /> <span className="hidden sm:inline">Engines</span> <ChevronDown size={12} />
-              </button>
-              {enginesMenuOpen && (
-                <div className="absolute right-0 mt-2 w-60 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl shadow-2xl z-50 p-1.5 space-y-1">
-                  <button
-                    onClick={() => {
-                      setShowOpexModal(true);
-                      setEnginesMenuOpen(false);
-                    }}
-                    className="w-full text-left px-3 py-2.5 text-xs rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800/80 flex items-center gap-2.5 text-indigo-400 font-medium min-h-[44px]"
-                  >
-                    <Building2 size={16} /> Company OPEX & Modeler
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowLiquidModal(true);
-                      setEnginesMenuOpen(false);
-                    }}
-                    className="w-full text-left px-3 py-2.5 text-xs rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800/80 flex items-center gap-2.5 text-cyan-400 font-medium min-h-[44px]"
-                  >
-                    <Droplets size={16} /> Liquid Batch Engine
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowGeometryModal(true);
-                      setEnginesMenuOpen(false);
-                    }}
-                    className="w-full text-left px-3 py-2.5 text-xs rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800/80 flex items-center gap-2.5 text-blue-400 font-medium min-h-[44px]"
-                  >
-                    <ArrowRightLeft size={16} /> Unit Geometry Engine
-                  </button>
-                  <div className="h-px bg-slate-200 dark:bg-zinc-800 my-1" />
-                  <button
-                    onClick={() => {
-                      setShowWhatIfModal(true);
-                      setEnginesMenuOpen(false);
-                    }}
-                    className="w-full text-left px-3 py-2.5 text-xs rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800/80 flex items-center gap-2.5 text-purple-400 font-medium min-h-[44px]"
-                  >
-                    <Sparkles size={16} /> Sensitivity Tester
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowReverseSolverModal(true);
-                      setEnginesMenuOpen(false);
-                    }}
-                    className="w-full text-left px-3 py-2.5 text-xs rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800/80 flex items-center gap-2.5 text-cyan-400 font-medium min-h-[44px]"
-                  >
-                    <BarChart2 size={16} /> Reverse Target Solver
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowRevisionDiffModal(true);
-                      setEnginesMenuOpen(false);
-                    }}
-                    className="w-full text-left px-3 py-2.5 text-xs rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800/80 flex items-center gap-2.5 text-indigo-400 font-medium min-h-[44px]"
-                  >
-                    <Clock size={16} /> Revision Diff Engine
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* Governance Dropdown */}
-            <div className="relative hidden sm:block">
-              <button
-                onClick={() => {
-                  setRbacMenuOpen(!rbacMenuOpen);
-                  setEnginesMenuOpen(false);
-                }}
-                className="btn btn-ghost min-h-[44px] px-3 py-1.5 text-xs text-purple-400 border border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 flex items-center gap-1.5 rounded-xl"
-              >
-                <Shield size={14} /> {currentUser.role.replace("_", " ").toUpperCase()}{" "}
-                <ChevronDown size={12} />
-              </button>
-              {rbacMenuOpen && (
-                <div className="absolute right-0 mt-2 w-52 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl shadow-2xl z-50 p-1.5 space-y-1">
-                  <button
-                    onClick={() => {
-                      setShowTeamModal(true);
-                      setRbacMenuOpen(false);
-                    }}
-                    className="w-full text-left px-3 py-2.5 text-xs rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800/80 flex items-center gap-2.5 text-purple-400 font-medium min-h-[44px]"
-                  >
-                    <Shield size={16} /> Roles & Permissions
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowAuditModal(true);
-                      setRbacMenuOpen(false);
-                    }}
-                    className="w-full text-left px-3 py-2.5 text-xs rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800/80 flex items-center gap-2.5 text-amber-400 font-medium min-h-[44px]"
-                  >
-                    <Activity size={16} /> Session Audit Log
-                  </button>
-                </div>
-              )}
-            </div>
-
             <select
               value={currency}
               onChange={(e) => setCurrency(e.target.value as "INR" | "USD")}
               aria-label="Select Currency"
-              className="cf-input py-1.5 text-sm w-20 min-h-[44px] hidden sm:block rounded-xl bg-slate-100 dark:bg-zinc-800/80 border-transparent focus:border-blue-500"
+              className="cf-input py-1.5 text-sm w-20 min-h-[44px] hidden sm:block rounded-md bg-slate-100 dark:bg-zinc-800/80 border border-slate-200 dark:border-zinc-700 focus:border-blue-500"
             >
               <option value="INR">₹ INR</option>
               <option value="USD">$ USD</option>
@@ -760,25 +650,17 @@ export function DashboardPageContent() {
             <button
               aria-label="Toggle Theme"
               onClick={() => setTheme(isDark ? "light" : "dark")}
-              className="btn btn-icon min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl"
+              className="btn btn-icon min-h-[44px] min-w-[44px] flex items-center justify-center rounded-md border border-slate-200 dark:border-zinc-700"
             >
               {isDark ? <Sun size={18} /> : <Moon size={18} />}
-            </button>
-            <button
-              aria-label="Share"
-              onClick={handleShare}
-              className="btn btn-icon min-h-[44px] min-w-[44px] hidden sm:flex items-center justify-center rounded-xl"
-              title="Share Project"
-            >
-              <Share2 size={18} />
             </button>
             <button
               aria-label="Export Excel"
               onClick={handleExport}
               disabled={exporting}
-              className="btn btn-primary min-h-[44px] px-4 hidden sm:flex items-center justify-center gap-2 rounded-xl text-sm font-semibold"
+              className="btn btn-primary min-h-[44px] px-4 hidden sm:flex items-center justify-center gap-2 rounded-md text-sm font-semibold"
             >
-              <Download size={16} /> {exporting ? "..." : "Export"}
+              <Download size={16} /> {exporting ? "..." : "Export PI"}
             </button>
           </div>
         </div>
@@ -826,9 +708,9 @@ export function DashboardPageContent() {
 
       {/* ══════ MAIN CONTENT ══════ */}
       <div className="max-w-screen-2xl mx-auto px-3 sm:px-6 py-2 sm:py-4 overflow-x-hidden">
-        <div className="flex flex-col xl:flex-row gap-6">
+        <div className="flex flex-col lg:grid lg:grid-cols-[65%_35%] gap-6 items-start">
           {/* ════ LEFT: BLOCKS PANEL ════ */}
-          <div className={`xl:flex-1 ${mobileTab === "summary" ? "hidden sm:block" : "block"}`}>
+          <div className={`min-w-0 ${mobileTab === "summary" ? "hidden sm:block" : "block"}`}>
             {/* Quick-Start Industry Presets Bar */}
             <div className="card p-3 mb-4 flex items-center justify-between gap-2 overflow-x-auto">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5 flex-shrink-0">
@@ -1024,33 +906,80 @@ export function DashboardPageContent() {
               )}
             </AnimatePresence>
 
-            {/* Reorderable Cost Blocks List */}
-            <Reorder.Group axis="y" values={blocks} onReorder={reorderBlocks} className="space-y-3">
-              {blocks.map((block) => (
-                <CostBlockCard
-                  key={block.id}
-                  block={block}
-                  currency={currency}
-                  isDark={isDark}
-                  expanded={expanded === block.id}
-                  userRole={currentUser.role}
-                  approvalStatus={approvalStatus}
-                  onToggleExpand={handleToggleExpand}
-                  onToggleEnable={handleToggleEnable}
-                  onDelete={handleDeleteBlock}
-                  onUpdateVariable={handleUpdateVariable}
-                />
-              ))}
-            </Reorder.Group>
+            {/* ── Bento Cards ── */}
+            <div className="space-y-6">
+              {/* Card 1 */}
+              <div className="card p-5 border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm rounded-2xl">
+                <h3 className="font-bold mb-4 text-sm flex items-center gap-2" style={{ color: "var(--text-1)" }}>
+                  <Package size={18} className="text-blue-500" /> [Raw Material & Dimensions]
+                </h3>
+                <div className="space-y-3">
+                  {blocks.filter(b => b.type === "raw_material" || b.type === "packaging" || b.label.toLowerCase().includes("material") || b.label.toLowerCase().includes("geometry")).map((block) => (
+                    <CostBlockCard
+                      key={block.id} block={block} currency={currency} isDark={isDark} expanded={expanded === block.id} userRole={currentUser.role} approvalStatus={approvalStatus} onToggleExpand={handleToggleExpand} onToggleEnable={handleToggleEnable} onDelete={handleDeleteBlock} onUpdateVariable={handleUpdateVariable}
+                    />
+                  ))}
+                </div>
+              </div>
 
-            <div className="mt-4 text-xs text-center text-gray-500 opacity-60 flex items-center justify-center gap-2 show-mobile">
-              <Info size={12} /> Drag blocks to reorder or click to edit variables.
+              {/* Card 2 */}
+              <div className="card p-5 border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm rounded-2xl">
+                <h3 className="font-bold mb-4 text-sm flex items-center gap-2" style={{ color: "var(--text-1)" }}>
+                  <Settings size={18} className="text-emerald-500" /> [Processing, Labor & Machine Overhead]
+                </h3>
+                <div className="space-y-3">
+                  {blocks.filter(b => b.type === "direct_labor" || b.type === "fixed_overhead" || b.type === "variable_overhead" || b.type === "finishing" || b.label.toLowerCase().includes("labor") || b.label.toLowerCase().includes("processing") || b.label.toLowerCase().includes("tool")).map((block) => (
+                    <CostBlockCard
+                      key={block.id} block={block} currency={currency} isDark={isDark} expanded={expanded === block.id} userRole={currentUser.role} approvalStatus={approvalStatus} onToggleExpand={handleToggleExpand} onToggleEnable={handleToggleEnable} onDelete={handleDeleteBlock} onUpdateVariable={handleUpdateVariable}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Card 3 */}
+              <div className="card p-5 border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm rounded-2xl">
+                <h3 className="font-bold mb-4 text-sm flex items-center gap-2" style={{ color: "var(--text-1)" }}>
+                  <Trash2 size={18} className="text-amber-500" /> [Scrap Allowance & Waste Recovery]
+                </h3>
+                <div className="space-y-3">
+                  {blocks.filter(b => b.type === "wastage" || b.label.toLowerCase().includes("scrap") || b.label.toLowerCase().includes("waste") || b.label.toLowerCase().includes("shrinkage")).map((block) => (
+                    <CostBlockCard
+                      key={block.id} block={block} currency={currency} isDark={isDark} expanded={expanded === block.id} userRole={currentUser.role} approvalStatus={approvalStatus} onToggleExpand={handleToggleExpand} onToggleEnable={handleToggleEnable} onDelete={handleDeleteBlock} onUpdateVariable={handleUpdateVariable}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Other Blocks */}
+              {(() => {
+                const categorized = new Set([
+                  ...blocks.filter(b => b.type === "raw_material" || b.type === "packaging" || b.label.toLowerCase().includes("material") || b.label.toLowerCase().includes("geometry")),
+                  ...blocks.filter(b => b.type === "direct_labor" || b.type === "fixed_overhead" || b.type === "variable_overhead" || b.type === "finishing" || b.label.toLowerCase().includes("labor") || b.label.toLowerCase().includes("processing") || b.label.toLowerCase().includes("tool")),
+                  ...blocks.filter(b => b.type === "wastage" || b.label.toLowerCase().includes("scrap") || b.label.toLowerCase().includes("waste") || b.label.toLowerCase().includes("shrinkage"))
+                ].map(b => b.id));
+                const other = blocks.filter(b => !categorized.has(b.id));
+                if (other.length === 0) return null;
+                return (
+                  <div className="card p-5 border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm rounded-2xl">
+                    <h3 className="font-bold mb-4 text-sm flex items-center gap-2" style={{ color: "var(--text-1)" }}>
+                      <Plus size={18} className="text-purple-500" /> Other Components
+                    </h3>
+                    <div className="space-y-3">
+                      {other.map(block => (
+                        <CostBlockCard
+                          key={block.id} block={block} currency={currency} isDark={isDark} expanded={expanded === block.id} userRole={currentUser.role} approvalStatus={approvalStatus} onToggleExpand={handleToggleExpand} onToggleEnable={handleToggleEnable} onDelete={handleDeleteBlock} onUpdateVariable={handleUpdateVariable}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           </div>
 
           {/* ════ RIGHT: SUMMARY PANEL ════ */}
           <div
-            className={`xl:w-96 space-y-4 ${
+            className={`min-w-0 space-y-4 sticky top-24 h-fit ${
               mobileTab === "blocks" ? "hidden sm:block" : "block"
             }`}
           >
@@ -1087,29 +1016,68 @@ export function DashboardPageContent() {
 
                   {/* Tax Breakdown */}
                   <div className="mb-2 mt-4">
-                    <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Tax & Levies</div>
+                    <div className="flex justify-between items-center mb-1">
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Tax Layer / GST</div>
+                      <select 
+                        value={gstRate.toString()}
+                        onChange={(e) => setGstRate(parseFloat(e.target.value))}
+                        className="text-xs bg-slate-100 dark:bg-zinc-800/80 border border-slate-200 dark:border-zinc-700 rounded px-1 py-0.5"
+                      >
+                        <option value="0">0%</option>
+                        <option value="0.05">5%</option>
+                        <option value="0.12">12%</option>
+                        <option value="0.18">18%</option>
+                      </select>
+                    </div>
                     <div className="flex justify-between items-center py-1.5 border-b border-[var(--border)]">
-                      <span className="text-sm text-[var(--text-2)]">Tax / GST</span>
+                      <span className="text-sm text-[var(--text-2)]">Tax Amount</span>
                       <span className="font-medium text-sm font-mono text-amber-500">{fmt(summary.taxAmount, currency)}</span>
                     </div>
                   </div>
 
                   {/* Profit Margin */}
                   <div className="mb-2 mt-4">
-                    <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Net Profit Margin</div>
+                    <div className="flex justify-between items-center mb-1">
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Net Profit Margin ({(targetMarginPct * 100).toFixed(0)}%)</div>
+                    </div>
+                    <input
+                      type="range"
+                      min={0.10}
+                      max={0.50}
+                      step={0.01}
+                      value={targetMarginPct}
+                      onChange={(e) => setTargetMargin(parseFloat(e.target.value))}
+                      className="w-full mb-1 accent-emerald-500"
+                    />
                     <div className="flex justify-between items-center py-1.5 border-b border-[var(--border)]">
                       <span className="text-sm text-[var(--text-2)]">Profit Target</span>
                       <span className="font-medium text-sm font-mono text-emerald-500">{fmt(summary.profitAmount, currency)}</span>
                     </div>
                   </div>
 
+                  {/* Food Cost Sanity Alert (Workspace 4) */}
+                  {domain === "food" && summary.sellingPrice > 0 && (
+                    (() => {
+                      const foodCostPct = (summary.directCosts / summary.sellingPrice) * 100;
+                      return foodCostPct > 32 ? (
+                        <div className="mb-4 mt-2 p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-500 text-xs flex items-start gap-2">
+                          <AlertTriangle size={14} className="mt-0.5 flex-shrink-0" />
+                          <div>
+                            <strong>Target Food Cost Alert</strong>
+                            <p className="mt-0.5">Your food cost is currently {foodCostPct.toFixed(1)}% of the selling price, which exceeds the standard 32% threshold for HoReCa profitability.</p>
+                          </div>
+                        </div>
+                      ) : null;
+                    })()
+                  )}
+
                   <SellingPriceCard value={summary.sellingPrice} currency={currency} />
 
                   <button
                     onClick={() => setShowInvoiceModal(true)}
-                    className="btn w-full py-3 mb-2 bg-indigo-600 hover:bg-indigo-700 text-white shadow-md rounded-xl font-bold flex justify-center gap-2"
+                    className="btn w-full py-3.5 mb-2 bg-indigo-600 hover:bg-indigo-700 text-white shadow-xl rounded-xl font-bold flex justify-center gap-2 text-base tracking-wide"
                   >
-                    <FileText size={16} /> 1-Click Generate PI
+                    <FileText size={18} /> Generate Proforma Invoice (PDF)
                   </button>
 
                   {/* Reverse Target Price Solver Result Card */}
