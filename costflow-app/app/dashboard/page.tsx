@@ -9,7 +9,7 @@ import {
   BarChart2, ArrowLeft, Sun, Moon, Factory, GraduationCap,
   ShoppingCart, Globe, HardHat, X, ArrowRightLeft, Droplets,
   Shield, Activity, Lock, UserCheck, Building2, Info, Share2, Clock, FileText,
-  Package, Settings,
+  Package, Settings, Box, Coffee, Droplet, Shirt,
   type LucideProps,
 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -55,11 +55,12 @@ const CostFlowCopilot = dynamic(
 
 /* ─── Icon maps ─── */
 const DOMAIN_ICONS: Record<string, React.ComponentType<LucideProps>> = {
-  manufacturing: Factory,
-  school: GraduationCap,
-  retail: ShoppingCart,
-  ecommerce: Globe,
-  construction: HardHat,
+  metals: Factory,
+  plastics: Package,
+  packaging: Box,
+  food: Coffee,
+  agro: Droplet,
+  apparel: Shirt,
 };
 
 /* ─── Helpers ─── */
@@ -125,6 +126,7 @@ export function DashboardPageContent() {
     batchMultiplier,
     targetPriceSolverEnabled,
     targetSellingPrice,
+    gstRate,
     setMarginMode,
     setBatchMultiplier,
     setTargetPriceSolver,
@@ -133,6 +135,7 @@ export function DashboardPageContent() {
     setCompanyName,
     setCurrency,
     setTargetMargin: storeSetTargetMargin,
+    setGstRate,
     updateBlockVariable,
     toggleBlock,
     reorderBlocks,
@@ -1046,7 +1049,7 @@ export function DashboardPageContent() {
                       max={0.50}
                       step={0.01}
                       value={targetMarginPct}
-                      onChange={(e) => setTargetMargin(parseFloat(e.target.value))}
+                      onChange={(e) => storeSetTargetMargin(parseFloat(e.target.value))}
                       className="w-full mb-1 accent-emerald-500"
                     />
                     <div className="flex justify-between items-center py-1.5 border-b border-[var(--border)]">

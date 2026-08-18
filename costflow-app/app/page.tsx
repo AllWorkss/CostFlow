@@ -107,7 +107,7 @@ const rise = {
 export default function LandingPage() {
   const router = useRouter();
   const { setDomain } = useCostingStore();
-  const [selected, setSelected] = useState<Domain>("manufacturing");
+  const [selected, setSelected] = useState<Domain>("metals");
   const [theme, setTheme] = useState<"dark" | "light">("dark");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);

@@ -3,11 +3,12 @@
 // ============================================================
 
 export type Domain =
-  | "manufacturing"
-  | "school"
-  | "retail"
-  | "ecommerce"
-  | "construction";
+  | "metals"
+  | "plastics"
+  | "packaging"
+  | "food"
+  | "agro"
+  | "apparel";
 
 export type BlockType =
   | "raw_material"

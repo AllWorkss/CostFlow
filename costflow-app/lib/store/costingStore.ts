@@ -114,8 +114,8 @@ function loadPresetBlocks(domain: Domain): CostingBlock[] {
 export const useCostingStore = create<CostingStore>()(
   persist(
     (set, get) => ({
-      domain: "manufacturing",
-      blocks: loadPresetBlocks("manufacturing"),
+      domain: "metals",
+      blocks: loadPresetBlocks("metals"),
       summary: null,
       currency: "INR",
       projectId: null,
@@ -484,8 +484,8 @@ export const useCostingStore = create<CostingStore>()(
         set({
           projectId,
           projectName: data.projectName || "Untitled",
-          domain: data.domain || "manufacturing",
-          blocks: data.blocks || loadPresetBlocks("manufacturing"),
+          domain: data.domain || "metals",
+          blocks: data.blocks || loadPresetBlocks("metals"),
           currency: data.currency || "INR",
           companyName: data.companyName || "",
           targetMarginPct: data.targetMarginPct || 0.25,
